@@ -56,7 +56,7 @@ class block:
         if len(self.content) != 0:
             for i in range(len(self.content)):
                 if self.content[i][0] == 0:
-                    self.children.append(block(self.content[i:], parent = self, parent_depth = self.depth))
+                    self.children.append(block(self.content[i:], parent = self))
 
 def draw_tree(graph: graphviz.Digraph, tree: block, parent_id = 0):
     current_id = str(id(tree))
