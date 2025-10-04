@@ -16,6 +16,7 @@ Subclasses will have arrows pointing to the parent class
 """
 
 import sys
+import graphviz
 
 # basic plan for now:
 
@@ -31,6 +32,41 @@ import sys
     # with – starts a context manager block
     # def – starts a function definition block
     # class – starts a class definition block
+
+class block:
+    def __init__(self, content, parent = None):
+        self.parent = parent
+        self.source = content[0][1]
+        self.content = []
+        for line in content[1:]:
+            if line[0] == 0:
+                break
+            self.content.append([line[0] - 1, line[1]])
+
+        self.children = []
+        
+        # print('\n')
+        # print("parent: " + str(self.parent))
+        # print("source: " + self.source_line)
+        # for line in self.content:
+        #     print(line)
+
+        # breakpoint()
+
+        if len(self.content) != 0:
+            for i in range(len(self.content)):
+                if self.content[i][0] == 0:
+                    self.children.append(block(self.content[i:], parent = self, parent_depth = self.depth))
+
+def draw_tree(graph: graphviz.Digraph, tree: block, parent_id = 0):
+    current_id = str(id(tree))
+    graph.node(current_id, tree.source)
+    
+    if parent_id != 0:
+        graph.edge(parent_id, current_id)
+
+    for child in tree.children:
+        draw_tree(graph, child, current_id)
 
 def num_indentation(line):
     # check for tab character
@@ -91,8 +127,18 @@ def main(file_name=__file__):
         
         lines[i] = [num_indentation(line), line.strip()]
     
-    for line in lines:
-        print(line)
+    # for line in lines:
+    #     print(line)
+
+    blocks = []
+    for i in range(len(lines)):
+        if lines[i][0] == 0:
+            blocks.append(block(lines[i:]))
+    
+    dot = graphviz.Digraph()
+    for i in blocks:
+        draw_tree(dot, i)
+    dot.render('simple_graph.pdf', view=True)
 
 if __name__ == "__main__":
     # check for file name arg
