@@ -18,21 +18,6 @@ Subclasses will have arrows pointing to the parent class
 import sys
 import graphviz
 
-# basic plan for now:
-
-# Go through the python file and look for these indent-causing keywords:
-    # if – starts a conditional block
-    # elif – starts an alternative conditional block
-    # else – starts the else block
-    # for – starts a for-loop block
-    # while – starts a while-loop block
-    # try – starts a try block
-    # except – starts an exception handling block
-    # finally – starts the finalizing block after try/except
-    # with – starts a context manager block
-    # def – starts a function definition block
-    # class – starts a class definition block
-
 def generic(Block):
     if len(Block.children) != 0:
         Block.dot.edge(str(id(Block)), str(id(Block.children[0])))
@@ -100,16 +85,6 @@ class Block:
         for child in self.children:
             child.graph()
 
-# def draw_tree(graph: graphviz.Digraph, tree: Block, parent_id = 0):
-#     current_id = str(id(tree))
-#     graph.node(current_id, tree.source)
-    
-#     if parent_id != 0:
-#         graph.edge(parent_id, current_id)
-
-#     for child in tree.children:
-#         draw_tree(graph, child, current_id)
-
 def num_indentation(line):
     # check for tab character
     if line[0] == '\t':
@@ -130,17 +105,8 @@ def num_indentation(line):
             raise IndentationError(f"Bro. {num_intdent * 4} spaces? What is wrong with you?")
         
         return int((len(line) - len(line.strip())) / 4)
-
-def main(file_name=__file__):
-    # open the except if the file can't be opened
-    try:
-        with open(file_name, "r") as f:
-            lines = f.readlines()
-
-    # print the error caught
-    except Exception as e:
-        print(e)
     
+def remove_lines(lines):
     # boolean to keep track of open multiline comments
     open_multiline = False
 
@@ -168,9 +134,19 @@ def main(file_name=__file__):
             continue
         
         lines[i] = [num_indentation(line), line.strip()]
-    
-    # for line in lines:
-    #     print(line)
+
+def main(file_name = __file__):
+    # open the except if the file can't be opened
+    try:
+        with open(file_name, "r") as f:
+            lines = f.readlines()
+
+    # print the error caught
+    except Exception as e:
+        print(e)
+
+    # process the text
+    remove_lines(lines)
 
     dot = graphviz.Digraph()
     blocks = []
@@ -180,6 +156,7 @@ def main(file_name=__file__):
     
     for block in blocks:
         block.graph()
+
     dot.render('simple_graph.pdf', view=True)
 
 if __name__ == "__main__":
@@ -188,9 +165,6 @@ if __name__ == "__main__":
         main(sys.argv[1])
     else:
         main()
-
-# later, I will go through the boxes post order, looking at one depth level at a time
-    # then probably do some sort of magic to convert box to box to box connections to some sort of program flow at a line level
 
 # then go through line level graph and add connections for keyword pairs (if elif else, try except else finaly, def return) and non depth based keywords (break, continue, exit(), quit())
 
