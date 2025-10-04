@@ -15,6 +15,8 @@ Classes will have very basic graphs showing attributes and lists of methods (met
 Subclasses will have arrows pointing to the parent class
 """
 
+import sys
+
 # basic plan for now:
 
 # Go through the python file and look for these indent-causing keywords:
@@ -29,7 +31,76 @@ Subclasses will have arrows pointing to the parent class
     # with – starts a context manager block
     # def – starts a function definition block
     # class – starts a class definition block
-                    
+
+def num_indentation(line):
+    # check for tab character
+    if line[0] == '\t':
+        count = 0
+        # count tabs
+        for char in line:
+            if char == '\t':
+                count += 1
+            else:
+                break
+        return count
+    
+    else:
+        # number of indentations
+        num_intdent = (len(line) - len(line.strip())) / 4
+        # if the user is a 
+        if not num_intdent.is_integer():
+            raise IndentationError(f"Bro. {num_intdent * 4} spaces? What is wrong with you?")
+        
+        return int((len(line) - len(line.strip())) / 4)
+
+def main(file_name=__file__):
+    # open the except if the file can't be opened
+    try:
+        with open(file_name, "r") as f:
+            lines = f.readlines()
+
+    # print the error caught
+    except Exception as e:
+        print(e)
+    
+    # boolean to keep track of open multiline comments
+    open_multiline = False
+
+    # iterate through the lines in reverse order, so that lines can be removed
+    for i in reversed(range(len(lines))):
+        # remove new line characters
+        if lines[i].endswith('\n'):
+            lines[i] = lines[i][0:-1]
+
+        line = lines[i]
+
+        # if multiline comment ends, set open_multiline to false, and remove the line
+        if ("\"\"\"" in line or "\'\'\'" in line) and open_multiline == True:
+            open_multiline = False
+            lines.pop(i)
+            continue
+
+        # if multiline comment starts, then set open_multiline to True
+        elif ("\"\"\"" in line or "\'\'\'" in line) and open_multiline == False:
+            open_multiline = True
+        
+        # remove comments and empty lines
+        if open_multiline or len(line) == 0 or line.isspace() or line.strip()[0] == '#':
+            lines.pop(i)
+            continue
+        
+        lines[i] = [num_indentation(line), line.strip()]
+    
+    for line in lines:
+        print(line)
+
+if __name__ == "__main__":
+    # check for file name arg
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        main()
+ 
 # Then construct boxes containing the contents under that key word
 
 # There will probably be a box class to allow the creation of a tree out of the boxes
