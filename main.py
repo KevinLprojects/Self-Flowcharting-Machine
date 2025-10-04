@@ -33,40 +33,82 @@ import graphviz
     # def – starts a function definition block
     # class – starts a class definition block
 
-class block:
-    def __init__(self, content, parent = None):
+def generic(Block):
+    if len(Block.children) != 0:
+        Block.dot.edge(str(id(Block)), str(id(Block.children[0])))
+    else:
+        if Block.parent is not None:
+            self_index = Block.parent.children.index(Block)
+            if self_index != len(Block.parent.children) - 1:
+                Block.dot.edge(str(id(Block)), str(id(Block.parent.children[self_index + 1])))
+
+# def IF(Block):
+#     Block.dot.edge(str(id(Block)), str(id(Block.children[0])), label="yes")
+
+#     index_of_current_child = Block.parent.children
+
+Keyword_Map = {
+    "if": ["diamond", generic],
+    "elif": ["diamond", generic],
+    "else": ["diamond", generic],
+    "for": ["diamond", generic],
+    "while": ["diamond", generic],
+    "try": ["diamond", generic],
+    "except": ["diamond", generic],
+    "finally": ["diamond", generic],
+    "with": ["diamond", generic],
+    "def": ["diamond", generic],
+    "class": ["diamond", generic]
+}
+
+class Block:
+    def __init__(self, content, dot, parent = None):
         self.parent = parent
-        self.source = content[0][1]
         self.content = []
+        self.dot = dot
         for line in content[1:]:
             if line[0] == 0:
                 break
             self.content.append([line[0] - 1, line[1]])
+        
+        self.keyword = None
+        self.graph_func = None
+        self.node = None
+
+        first_line = content[0][1]
+        keyword = first_line.split()[0]
+
+        if keyword in Keyword_Map:
+            self.keyword = keyword
+            self.node = self.dot.node(str(id(self)), first_line, shape = Keyword_Map[keyword][0])
+            self.graph_func = Keyword_Map[keyword][1]
+        
+        else:
+            self.node = self.dot.node(str(id(self)), first_line, shape = "box")
+            self.graph_func = generic
 
         self.children = []
-        
-        # print('\n')
-        # print("parent: " + str(self.parent))
-        # print("source: " + self.source_line)
-        # for line in self.content:
-        #     print(line)
-
-        # breakpoint()
 
         if len(self.content) != 0:
             for i in range(len(self.content)):
                 if self.content[i][0] == 0:
-                    self.children.append(block(self.content[i:], parent = self))
+                    self.children.append(Block(self.content[i:], self.dot, parent = self))
 
-def draw_tree(graph: graphviz.Digraph, tree: block, parent_id = 0):
-    current_id = str(id(tree))
-    graph.node(current_id, tree.source)
+    def graph(self):
+        self.graph_func(self)
+
+        for child in self.children:
+            child.graph()
+
+# def draw_tree(graph: graphviz.Digraph, tree: Block, parent_id = 0):
+#     current_id = str(id(tree))
+#     graph.node(current_id, tree.source)
     
-    if parent_id != 0:
-        graph.edge(parent_id, current_id)
+#     if parent_id != 0:
+#         graph.edge(parent_id, current_id)
 
-    for child in tree.children:
-        draw_tree(graph, child, current_id)
+#     for child in tree.children:
+#         draw_tree(graph, child, current_id)
 
 def num_indentation(line):
     # check for tab character
@@ -130,14 +172,14 @@ def main(file_name=__file__):
     # for line in lines:
     #     print(line)
 
+    dot = graphviz.Digraph()
     blocks = []
     for i in range(len(lines)):
         if lines[i][0] == 0:
-            blocks.append(block(lines[i:]))
+            blocks.append(Block(lines[i:], dot))
     
-    dot = graphviz.Digraph()
-    for i in blocks:
-        draw_tree(dot, i)
+    for block in blocks:
+        block.graph()
     dot.render('simple_graph.pdf', view=True)
 
 if __name__ == "__main__":
@@ -146,10 +188,6 @@ if __name__ == "__main__":
         main(sys.argv[1])
     else:
         main()
- 
-# Then construct boxes containing the contents under that key word
-
-# There will probably be a box class to allow the creation of a tree out of the boxes
 
 # later, I will go through the boxes post order, looking at one depth level at a time
     # then probably do some sort of magic to convert box to box to box connections to some sort of program flow at a line level
