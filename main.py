@@ -35,6 +35,9 @@ def loop_test():
             pass
         else:
             pass
+    else:
+        pass
+    pass
     
     while True:
         if True:
@@ -113,24 +116,34 @@ def else_flow(block):
     # prevent the else block from being displayed
     block.hide()
 
-    # if the block has a sibling lower than it, then connect the last block in the inside of the else statement to it
+    # if the block has a sibling lower than it, then connect the last block on the inside of the else statement to it
     if block.parent is not None:
         self_index = block.parent.children.index(block)
         if self_index != len(block.parent.children) - 1:
-            Edge(block.get_end_leaf(), block.parent.children[self_index + 1])
+            Edge(block.get_end_leaf(), block.parent.children[self_index + 1], constraint='true', weight='0.5')
 
 def loop_flow(block):
     if len(block.children) != 0:
         Edge(block, block.children[0], label='yes')
     def graph_leaves(_block):
         for child in _block.children:
-            if (child.keyword in Keyword_Map and not child.keyword == 'else')and child.parent.children.index(child) == len(child.parent.children) - 1:
+            if (child.keyword in Keyword_Map and not child.keyword == 'else') and child.parent.children.index(child) == len(child.parent.children) - 1:
                 Edge(child, block, weight='0.25')
             if len(child.children) == 0 and child.count_edges()[1] == 0:
                 Edge(child, block, weight='0.25')
+
             graph_leaves(child)
     
     graph_leaves(block)
+
+    # if the block has siblings lower than it, then figure out how to connect them
+    if block.parent is not None:
+        self_index = block.parent.children.index(block)
+        if self_index != len(block.parent.children) - 1:
+            for i, child in enumerate(block.parent.children[self_index + 1:]):
+                # connect the first lower sibling (the statement exictuted when the condition is False)
+                if i == 0:
+                    Edge(block, child, label="no")
 
 # map between python keywords and their node shapes and control flows
 Keyword_Map = {
@@ -148,11 +161,13 @@ Keyword_Map = {
 }
 
 class Edge:
-    def __init__(self, source_block, target_block, label="", weight='1.0'):
+    def __init__(self, source_block, target_block, label="", constraint='true', weight='1.0', color='black'):
         self.source_block = source_block
         self.target_block = target_block
         self.label=label
-        self.weight=weight
+        self.constraint = constraint
+        self.weight = weight
+        self.color = color
         self.drawn = False
 
         source_block.edges.append(self)
@@ -173,7 +188,7 @@ class Edge:
             return
         self.drawn = True
         # add to the graphviz Digraph
-        dot.edge(str(id(self.source_block)), str(id(self.target_block)), label=self.label, weight=self.weight)
+        dot.edge(str(id(self.source_block)), str(id(self.target_block)), label=self.label, constraint=self.constraint, weight=self.weight, color=self.color)
     
 class Block:
     def __init__(self, content, parent = None):
@@ -378,7 +393,7 @@ def main(file_name = __file__):
 
     # initialize graph
     dot = graphviz.Digraph()
-    dot.attr('graph', ranksep='0.75', nodesep='1.0')
+    dot.attr('graph', ranksep='1.0', nodesep='1.0')
 
     # draw graph from block tree
     program_block.draw_graph(dot)
