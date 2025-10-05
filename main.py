@@ -65,12 +65,33 @@ def IF_flow(block):
                     break
 
 def ELSE_flow(block):
-    pass
+    if len(block.children) != 0:
+        block.dot.edge(str(id(block)), str(id(block.children[0])))
+
+    edges = get_edges(block.dot, id(block))
+    out_id = None
+    in_edges = []
+    for edge in edges:
+        if edge[0] == id(block):
+            out_id = edge[1]
+
+        if edge[1] == id(block):
+            in_edges.append(edge)
+    
+    for edge in in_edges:
+        block.dot.edge(str(edge[0]), str(out_id), label=edge[2])
+    
+    remove_node(block.dot, id(block))
+
+    if block.parent is not None:
+        self_index = block.parent.children.index(block)
+        if self_index != len(block.parent.children) - 1:
+            block.dot.edge(str(id(block.get_end_leaf())), str(id(block.parent.children[self_index + 1])))
 
 Keyword_Map = {
     "if": ["diamond", IF_flow],
     "elif": ["diamond", IF_flow],
-    "else": ["diamond", generic_flow],
+    "else": ["diamond", ELSE_flow],
     "for": ["diamond", generic_flow],
     "while": ["diamond", generic_flow],
     "try": ["diamond", generic_flow],
@@ -90,6 +111,7 @@ class Block:
         self.graph_func = None
         self.node = None
         self.first_line = None
+        self.connections = [] #[source object, target object, label]
 
         if parent is not None:
             self.first_line = content[0][1]
@@ -233,21 +255,18 @@ def get_edges(dot: graphviz.Digraph, id):
     node = True
     for line in dot.body:
         if str(id) in line:
-            print(line)
             if node:
                 node = False
             else:
                 id2_and_label = line.strip().replace(str(id), "").replace(" -> ", "").split()
-                id2 = id2_and_label[0]
-                label = None
-                if len(id2_and_label) > 1 and "label=" in id2_and_label[1]:
-                    i = id2_and_label[1].index("label=")
-                    label = id2_and_label[1][i:].split()[0]
+                label = ""
+                if len(id2_and_label) > 1:
+                    label = id2_and_label[1][7:-1]
 
                 if line.strip().index(str(id)) == 0:
-                    edges.append([id, type(id)(line.strip().replace(str(id), "").replace(" -> ", "").split()[0]), label])
+                    edges.append([id, type(id)(id2_and_label[0]), "no"])
                 else:
-                    edges.append([type(id)(line.strip().replace(str(id), "").replace(" -> ", "").split()[0]), id, label])
+                    edges.append([type(id)(id2_and_label[0]), id, "no"])
     return edges
 
 def remove_edge(dot: graphviz.Digraph, id1, id2):
@@ -258,7 +277,9 @@ def remove_edge(dot: graphviz.Digraph, id1, id2):
 
 def remove_node(dot: graphviz.Digraph, id):
     for line in dot.body:
-        if str(id) in line:
+        print(id, "   ", line)
+        if str(id) in str(line):
+            print("remove")
             dot.body.remove(line)
 
 if __name__ == "__main__":
