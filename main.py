@@ -65,31 +65,24 @@ def IF_flow(block):
                     break
 
 def ELSE_flow(block):
-    generic_flow(block)
-
-# def ELSE_flow(block):
-#     if len(block.children) != 0:
-#         block.dot.edge(str(id(block)), str(id(block.children[0])))
-
-#     edges = get_edges(block.dot, id(block))
-#     out_id = None
-#     in_edges = []
-#     for edge in edges:
-#         if edge[0] == id(block):
-#             out_id = edge[1]
-
-#         if edge[1] == id(block):
-#             in_edges.append(edge)
+    if len(block.children) != 0:
+        Edge(block, block.children[0])
     
-#     for edge in in_edges:
-#         block.dot.edge(str(edge[0]), str(out_id), label=edge[2])
-    
-#     remove_node(block.dot, id(block))
+    for edge in block.edges:
+        if edge.direction(block):
+            else_target = edge.target_block
+            break
 
-#     if block.parent is not None:
-#         self_index = block.parent.children.index(block)
-#         if self_index != len(block.parent.children) - 1:
-#             block.dot.edge(str(id(block.get_end_leaf())), str(id(block.parent.children[self_index + 1])))
+    for edge in block.edges:
+        if not edge.direction(block):
+            Edge(edge.source_block, else_target, label = edge.label)
+    
+    block.hide()
+
+    if block.parent is not None:
+        self_index = block.parent.children.index(block)
+        if self_index != len(block.parent.children) - 1:
+            Edge(block.get_end_leaf(), block.parent.children[self_index + 1])
 
 Keyword_Map = {
     "if": ["diamond", IF_flow],
@@ -115,9 +108,13 @@ class Edge:
         source_block.edges.append(self)
         target_block.edges.append(self)
     
-    def remove(self):
-        self.source_block.edges.remove(self)
-        self.target_block.edges.remove(self)
+    def direction(self, block):
+        if block == self.source_block:
+            return True
+        return False
+    
+    def hide(self):
+        self.drawn = True
     
     def draw(self, dot: graphviz.Digraph):
         if self.drawn:
@@ -168,10 +165,10 @@ class Block:
                 if self.content[i][0] == 0:
                     self.children.append(Block(self.content[i:], parent = self))
 
-    # def remove_from_graph(self):
-    #     self.shape = None
-    #     for i in reversed(range(len(self.edges))):
-    #         if self.edges[i]
+    def hide(self):
+        self.shape = None
+        for edge in self.edges:
+            edge.hide()
 
     def get_end_leaf(self):
         if len(self.children) == 0:
