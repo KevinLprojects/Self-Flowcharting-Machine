@@ -28,52 +28,26 @@ Subclasses will have arrows pointing to the parent class
 # maybe use seq2seq transformer to put node labels in plane english?
 
 def loop_test():
-    while True:
-        if True:
-            pass
-        elif True:
-            pass
-        else:
-            pass
-    else:
-        pass
-    pass
-    
-    while True:
-        if True:
-            pass
-        if True:
-            pass
-    
-    while True:
-        if True:
+    try:
+        while True:
             if True:
-                pass
-    
-    while True:
-        if True:
-            if True:
-                pass
-        elif True:
-            pass
-        else:
-            pass
-        pass
-
-    while True:
-        if True:
-            if True:
-                pass
+                for i in range(10):
+                    pass
+                else:
+                    pass
             elif True:
-                pass
+                while True:
+                    pass
             else:
                 pass
-            
-    while True:
-        while True:
-            pass
         pass
-    pass
+    except Exception as e:
+        print("2")
+    else:
+        print("3")
+    finally:
+        print("4")
+    print("5")
 
 import sys
 import graphviz
@@ -101,7 +75,7 @@ def conditional_flow(block, IF=True):
                 keyword = child.keyword
                 # connect the first lower sibling (the statement exictuted when the condition is False)
                 if i == 0:
-                    Edge(block, child, label="no")
+                    Edge(block, child, label="no", weight='0.5')
 
                 # connect the last node in the if's inside stantement (exicuted when the condition is True) to the first non elif/else block
                 if  keyword != "else" and (IF == True and keyword != "elif"):
@@ -128,7 +102,7 @@ def loop_flow(block):
     def graph_leaves(_block):
         for child in _block.children:
             if (child.keyword in Keyword_Map and not child.keyword == 'else') and child.parent.children.index(child) == len(child.parent.children) - 1:
-                Edge(child, block, weight='0.25')
+                Edge(child, block, weight='0.25', label='no')
             if len(child.children) == 0 and child.count_edges()[1] == 0:
                 Edge(child, block, weight='0.25')
 
@@ -145,6 +119,9 @@ def loop_flow(block):
                 if i == 0:
                     Edge(block, child, label="no")
 
+def try_flow(block):
+    generic_flow(block)
+
 # map between python keywords and their node shapes and control flows
 Keyword_Map = {
     "if": ["diamond", conditional_flow],
@@ -152,7 +129,7 @@ Keyword_Map = {
     "else": ["box", else_flow],
     "for": ["diamond", loop_flow],
     "while": ["diamond", loop_flow],
-    "try": ["box", generic_flow],
+    "try": ["box", try_flow],
     "except": ["box", generic_flow],
     "finally": ["box", generic_flow],
     "with": ["box", generic_flow],
@@ -161,14 +138,23 @@ Keyword_Map = {
 }
 
 class Edge:
-    def __init__(self, source_block, target_block, label="", constraint='true', weight='1.0', color='black'):
+    def __init__(self, source_block, target_block, label="", constraint='true', weight='1.0', color='black', style=None):
         self.source_block = source_block
         self.target_block = target_block
         self.label=label
         self.constraint = constraint
         self.weight = weight
         self.color = color
+        self.style = style
         self.drawn = False
+
+        if self.source_block.keyword == 'try':
+            self.source_block = self.source_block.children[0]
+        if self.target_block.keyword == 'try':
+            self.target_block = self.target_block.children[0]
+        
+        if self.source_block == self.target_block:
+            self.drawn = True
 
         source_block.edges.append(self)
         target_block.edges.append(self)
@@ -188,7 +174,7 @@ class Edge:
             return
         self.drawn = True
         # add to the graphviz Digraph
-        dot.edge(str(id(self.source_block)), str(id(self.target_block)), label=self.label, constraint=self.constraint, weight=self.weight, color=self.color)
+        dot.edge(str(id(self.source_block)), str(id(self.target_block)), label=self.label, constraint=self.constraint, weight=self.weight, color=self.color, style=self.style)
     
 class Block:
     def __init__(self, content, parent = None):
@@ -264,16 +250,25 @@ class Block:
             self.graph_func(self)
     
     # creates a graphviz node for the current block
-    def draw_node(self, dot: graphviz.Digraph):
+    def draw_node(self, dot):
         dot.node(str(id(self)), self.first_line, shape=self.shape)
 
-    # creates graphviz nodes for each block recursively
-    def draw_graph_nodes(self, dot: graphviz.Digraph):
+    def draw_graph_nodes(self, dot):
+        if self.keyword == 'try':
+            self.draw_subgraph_nodes(dot)
+            return
+        
         if self.parent is not None and self.shape is not None:
             self.draw_node(dot)
 
         for child in self.children:
             child.draw_graph_nodes(dot)
+    
+    def draw_subgraph_nodes(self, dot):
+        with dot.subgraph(name=str(id(self))) as c:
+            c.attr(label="try block", style="dashed", cluster='true')
+            for child in self.children:
+                child.draw_graph_nodes(c)
     
     # creates graphviz edges for each blocks edges recursively
     def draw_graph_edges(self, dot: graphviz.Digraph):  
@@ -393,7 +388,7 @@ def main(file_name = __file__):
 
     # initialize graph
     dot = graphviz.Digraph()
-    dot.attr('graph', ranksep='1.0', nodesep='1.0')
+    dot.attr('graph', ranksep='1.0', nodesep='1.0', compound='true')
 
     # draw graph from block tree
     program_block.draw_graph(dot)
