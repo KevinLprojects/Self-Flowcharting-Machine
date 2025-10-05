@@ -27,13 +27,57 @@ Subclasses will have arrows pointing to the parent class
 # improve layout of the chart (entry point -> Classes(methods) -> generic functions)
 # maybe use seq2seq transformer to put node labels in plane english?
 
+def loop_test():
+    while True:
+        if True:
+            pass
+        elif True:
+            pass
+        else:
+            pass
+    
+    while True:
+        if True:
+            pass
+        if True:
+            pass
+    
+    while True:
+        if True:
+            if True:
+                pass
+    
+    while True:
+        if True:
+            if True:
+                pass
+        elif True:
+            pass
+        else:
+            pass
+        pass
+
+    while True:
+        if True:
+            if True:
+                pass
+            elif True:
+                pass
+            else:
+                pass
+            
+    while True:
+        while True:
+            pass
+        pass
+    pass
+
 import sys
 import graphviz
 
 def generic_flow(block):
     # connect block to the first block inside its indentation (if it causes an indentation)
     if len(block.children) != 0:
-        print("unsupported indentation causing keyword: ", block.first_line) # if a block causes an intendation but is calling generic flow, it is not a supported keyword
         Edge(block, block.children[0])
 
     else:
@@ -43,9 +87,9 @@ def generic_flow(block):
             if self_index != len(block.parent.children) - 1:
                 Edge(block, block.parent.children[self_index + 1])
 
-def IF_flow(block):
+def conditional_flow(block, IF=True):
     # connect the block to its child (the statement exicuted when the condition is True)
-    Edge(block, block.children[0], "yes")
+    Edge(block, block.children[0], label="yes")
     # if the block has siblings lower than it, then figure out how to connect them
     if block.parent is not None:
         self_index = block.parent.children.index(block)
@@ -54,14 +98,14 @@ def IF_flow(block):
                 keyword = child.keyword
                 # connect the first lower sibling (the statement exictuted when the condition is False)
                 if i == 0:
-                    Edge(block, child, "no")
+                    Edge(block, child, label="no")
 
                 # connect the last node in the if's inside stantement (exicuted when the condition is True) to the first non elif/else block
-                if keyword != "elif" and keyword != "else":
+                if  keyword != "else" and (IF == True and keyword != "elif"):
                     Edge(block.get_end_leaf(), child)
                     break
 
-def ELSE_flow(block):
+def else_flow(block):
     # connect all incoming connections to the child (the statement exicuted inside the else)
     for edge in block.edges:
         Edge(edge.source_block, block.children[0], label = edge.label)
@@ -75,26 +119,40 @@ def ELSE_flow(block):
         if self_index != len(block.parent.children) - 1:
             Edge(block.get_end_leaf(), block.parent.children[self_index + 1])
 
+def loop_flow(block):
+    if len(block.children) != 0:
+        Edge(block, block.children[0], label='yes')
+    def graph_leaves(_block):
+        for child in _block.children:
+            if (child.keyword in Keyword_Map and not child.keyword == 'else')and child.parent.children.index(child) == len(child.parent.children) - 1:
+                Edge(child, block, weight='0.25')
+            if len(child.children) == 0 and child.count_edges()[1] == 0:
+                Edge(child, block, weight='0.25')
+            graph_leaves(child)
+    
+    graph_leaves(block)
+
 # map between python keywords and their node shapes and control flows
 Keyword_Map = {
-    "if": ["diamond", IF_flow],
-    "elif": ["diamond", IF_flow],
-    "else": ["diamond", ELSE_flow],
-    "for": ["diamond", generic_flow],
-    "while": ["diamond", generic_flow],
-    "try": ["diamond", generic_flow],
-    "except": ["diamond", generic_flow],
-    "finally": ["diamond", generic_flow],
-    "with": ["diamond", generic_flow],
+    "if": ["diamond", conditional_flow],
+    "elif": ["diamond", conditional_flow],
+    "else": ["box", else_flow],
+    "for": ["diamond", loop_flow],
+    "while": ["diamond", loop_flow],
+    "try": ["box", generic_flow],
+    "except": ["box", generic_flow],
+    "finally": ["box", generic_flow],
+    "with": ["box", generic_flow],
     "def": ["box", generic_flow],
     "class": ["box", generic_flow]
 }
 
 class Edge:
-    def __init__(self, source_block, target_block, label=""):
+    def __init__(self, source_block, target_block, label="", weight='1.0'):
         self.source_block = source_block
         self.target_block = target_block
-        self.label=""
+        self.label=label
+        self.weight=weight
         self.drawn = False
 
         source_block.edges.append(self)
@@ -113,10 +171,9 @@ class Edge:
         # don't draw if the edge has already been drawn
         if self.drawn:
             return
-
         self.drawn = True
         # add to the graphviz Digraph
-        dot.edge(str(id(self.source_block)), str(id(self.target_block)), label=self.label)
+        dot.edge(str(id(self.source_block)), str(id(self.target_block)), label=self.label, weight=self.weight)
     
 class Block:
     def __init__(self, content, parent = None):
@@ -165,6 +222,17 @@ class Block:
         for edge in self.edges:
             edge.hide()
 
+    # return number of incoming and outgoing edges
+    def count_edges(self):
+        in_count = 0
+        out_count = 0
+        for edge in self.edges:
+            if edge.direction(self):
+                out_count += 1
+            else:
+                in_count += 1
+        return (in_count, out_count)
+
     # gets the end line inside the current block
     def get_end_leaf(self):
         if len(self.children) == 0:
@@ -174,11 +242,11 @@ class Block:
 
     # adds connections to blocks based on the control flow associated with the block keyword
     def draw_flow(self):
-        if self.graph_func is not None:
-            self.graph_func(self)
-
         for child in self.children:
             child.draw_flow()
+
+        if self.graph_func is not None:
+            self.graph_func(self)
     
     # creates a graphviz node for the current block
     def draw_node(self, dot: graphviz.Digraph):
@@ -193,11 +261,11 @@ class Block:
             child.draw_graph_nodes(dot)
     
     # creates graphviz edges for each blocks edges recursively
-    def draw_graph_edges(self, dot: graphviz.Digraph):
+    def draw_graph_edges(self, dot: graphviz.Digraph):  
         if self.parent is not None:
             for edge in self.edges:
                 edge.draw(dot)
-        
+
         for child in self.children:
             child.draw_graph_edges(dot)
     
@@ -310,6 +378,7 @@ def main(file_name = __file__):
 
     # initialize graph
     dot = graphviz.Digraph()
+    dot.attr('graph', ranksep='0.75', nodesep='1.0')
 
     # draw graph from block tree
     program_block.draw_graph(dot)
