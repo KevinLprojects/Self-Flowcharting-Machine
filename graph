@@ -1,282 +1,290 @@
 digraph {
-	2394542818032 [label="def test():" shape=box]
-	2394542230736 [label="if True:" shape=diamond]
-	2394542231376 [label="pass#1" shape=box]
-	2394541505152 [label="pass#2" shape=box]
-	2394541505456 [label="if True:" shape=diamond]
-	2394536507248 [label="pass#3" shape=box]
-	2394539019264 [label="else:" shape=diamond]
-	2394542269008 [label="pass#4" shape=box]
-	2394538897488 [label="pass#5" shape=box]
-	2394542295120 [label="if True:" shape=diamond]
-	2394542482896 [label="pass#6" shape=box]
-	2394542482656 [label="elif True:" shape=diamond]
-	2394542451952 [label="pass#7" shape=box]
-	2394542452176 [label="else:" shape=diamond]
-	2394543473552 [label="pass#8" shape=box]
-	2394541405200 [label="pass#9" shape=box]
-	2394541405392 [label="import sys" shape=box]
-	2394542676240 [label="import graphviz" shape=box]
-	2394542675888 [label="def generic(block):" shape=box]
-	2394543434768 [label="if len(block.children) != 0:" shape=diamond]
-	2394543434928 [label="block.dot.edge(str(id(block)), str(id(block.children[0])))" shape=box]
-	2394542399152 [label="else:" shape=diamond]
-	2394542399296 [label="if block.parent is not None:" shape=diamond]
-	2394542399440 [label="self_index = block.parent.children.index(block)" shape=box]
-	2394542399584 [label="if self_index != len(block.parent.children) - 1:" shape=diamond]
-	2394542400016 [label="block.dot.edge(str(id(block)), str(id(block.parent.children[self_index + 1])))" shape=box]
-	2394542400736 [label="def IF(block):" shape=box]
-	2394542400592 [label="block.dot.edge(str(id(block)), str(id(block.children[0])), label=\"yes\")" shape=box]
-	2394542401024 [label="if block.parent is not None:" shape=diamond]
-	2394542400880 [label="self_index = block.parent.children.index(block)" shape=box]
-	2394542401168 [label="if self_index != len(block.parent.children) - 1:" shape=diamond]
-	2394542401456 [label="for i, child in enumerate(block.parent.children[self_index + 1:]):" shape=diamond]
-	2394542401744 [label="keyword = child.keyword" shape=box]
-	2394542401600 [label="if i == 0:" shape=diamond]
-	2394542401888 [label="block.dot.edge(str(id(block)), str(id(child)), label=\"no\")" shape=box]
-	2394542402176 [label="if keyword != \"elif\" and keyword != \"else\":" shape=diamond]
-	2394542402320 [label="block.dot.edge(str(id(block.get_end_leaf())), str(id(child)))" shape=box]
-	2394542402608 [label=break shape=box]
-	2394542402752 [label="Keyword_Map = {\n\"if\": [\"diamond\", IF],\n\"elif\": [\"diamond\", IF],\n\"else\": [\"diamond\", generic],\n\"for\": [\"diamond\", generic],\n\"while\": [\"diamond\", generic],\n\"try\": [\"diamond\", generic],\n\"except\": [\"diamond\", generic],\n\"finally\": [\"diamond\", generic],\n\"with\": [\"diamond\", generic],\n\"def\": [\"box\", generic],\n\"class\": [\"box\", generic]\n}\n" shape=box]
-	2394542402896 [label="class Block:" shape=box]
-	2394542403040 [label="def __init__(self, content, dot, parent = None):" shape=box]
-	2394542403184 [label="self.parent = parent" shape=box]
-	2394542403328 [label="self.content = []" shape=box]
-	2394542403472 [label="self.dot = dot" shape=box]
-	2394542403616 [label="for line in content[1:]:" shape=diamond]
-	2394542403760 [label="if line[0] == 0:" shape=diamond]
-	2394542403904 [label=break shape=box]
-	2394542404048 [label="self.content.append([line[0] - 1, line[1]])" shape=box]
-	2394542404192 [label="self.keyword = None" shape=box]
-	2394542404480 [label="self.graph_func = None" shape=box]
-	2394542404624 [label="self.node = None" shape=box]
-	2394542404336 [label="self.first_line = content[0][1]" shape=box]
-	2394542404768 [label="keyword = self.first_line.split()[0]" shape=box]
-	2394542404912 [label="if keyword[-1] == \":\":" shape=diamond]
-	2394542405056 [label="keyword = keyword[0:-1]" shape=box]
-	2394542405200 [label="if keyword in Keyword_Map:" shape=diamond]
-	2394542405344 [label="self.keyword = keyword" shape=box]
-	2394542405488 [label="self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = Keyword_Map[keyword][0])" shape=box]
-	2394542405632 [label="self.graph_func = Keyword_Map[keyword][1]" shape=box]
-	2394542405776 [label="else:" shape=diamond]
-	2394542405920 [label="self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = \"box\")" shape=box]
-	2394542406208 [label="self.graph_func = generic" shape=box]
-	2394542406064 [label="self.children = []" shape=box]
-	2394542406352 [label="if len(self.content) != 0:" shape=diamond]
-	2394542406496 [label="for i in range(len(self.content)):" shape=diamond]
-	2394542406640 [label="if self.content[i][0] == 0:" shape=diamond]
-	2394542406784 [label="self.children.append(Block(self.content[i:], self.dot, parent = self))" shape=box]
-	2394542407072 [label="def graph(self):" shape=box]
-	2394542406928 [label="self.graph_func(self)" shape=box]
-	2394542407216 [label="for child in self.children:" shape=diamond]
-	2394542407360 [label="child.graph()" shape=box]
-	2394542407504 [label="def get_end_leaf(self):" shape=box]
-	2394543554640 [label="if len(self.children) == 0:" shape=diamond]
-	2394543554784 [label="return self" shape=box]
-	2394543554928 [label="else:" shape=diamond]
-	2394543555072 [label="return self.children[-1].get_end_leaf()" shape=box]
-	2394543555216 [label="def num_indentation(line, i):" shape=box]
-	2394543555360 [label="if line[0] == '\\t':" shape=diamond]
-	2394543555504 [label="count = 0" shape=box]
-	2394543555648 [label="for char in line:" shape=diamond]
-	2394543555792 [label="if char == '\\t':" shape=diamond]
-	2394543555936 [label="count += 1" shape=box]
-	2394543556080 [label="else:" shape=diamond]
-	2394543556224 [label=break shape=box]
-	2394543556368 [label="return count" shape=box]
-	2394543556512 [label="else:" shape=diamond]
-	2394543556656 [label="num_intdent = (len(line) - len(line.strip())) / 4" shape=box]
-	2394543556800 [label="if not num_intdent.is_integer():" shape=diamond]
-	2394543556944 [label="raise IndentationError(f\"Bro. {num_intdent * 4} spaces at line {i}? What is wrong with you?\")" shape=box]
-	2394543557232 [label="return int((len(line) - len(line.strip())) / 4)" shape=box]
-	2394543557088 [label="def remove_lines(lines):" shape=box]
-	2394543557376 [label="open_multiline = False" shape=box]
-	2394543557520 [label="for i in reversed(range(len(lines))):" shape=diamond]
-	2394543557664 [label="lines[i] = lines[i].rstrip()" shape=box]
-	2394543557808 [label="line = lines[i]" shape=box]
-	2394543557952 [label="if (line.strip().startswith(\"\\\"\\\"\\\"\") or line.strip().startswith(\"\\\'\\\'\\\'\")) and open_multiline == True:" shape=diamond]
-	2394543558096 [label="open_multiline = False" shape=box]
-	2394543558240 [label="lines.pop(i)" shape=box]
-	2394543558384 [label=continue shape=box]
-	2394543558528 [label="elif (line.strip().startswith(\"\\\"\\\"\\\"\") or line.strip().startswith(\"\\\'\\\'\\\'\")) and open_multiline == False:" shape=diamond]
-	2394543558672 [label="open_multiline = True" shape=box]
-	2394543558816 [label="if open_multiline or len(line) == 0 or line.strip()[0] == '#':" shape=diamond]
-	2394543559104 [label="lines.pop(i)" shape=box]
-	2394543559248 [label=continue shape=box]
-	2394543559392 [label="lines[i] = [num_indentation(line, i + 1), line.strip()]" shape=box]
-	2394543559680 [label="def merge_lines(lines):" shape=box]
-	2394543559968 [label="open_parentheses = 0" shape=box]
-	2394543560112 [label="open_square = 0" shape=box]
-	2394543559824 [label="open_curly = 0" shape=box]
-	2394543560256 [label="last_state = False" shape=box]
-	2394543560400 [label="combined_lines = \"\"" shape=box]
-	2394543560544 [label="for i in reversed(range(len(lines))):" shape=diamond]
-	2394543560688 [label="open_parentheses += lines[i][1].count(\")\") - lines[i][1].count(\"(\")" shape=box]
-	2394543560976 [label="open_square += lines[i][1].count(\"]\") - lines[i][1].count(\"[\")" shape=box]
-	2394543561120 [label="open_curly += lines[i][1].count(\"}\") - lines[i][1].count(\"{\")" shape=box]
-	2394543561408 [label="if open_parentheses + open_square + open_curly > 0:" shape=diamond]
-	2394543561696 [label="combined_lines = lines[i][1] + '\\n' + combined_lines" shape=box]
-	2394543561984 [label="lines.pop(i)" shape=box]
-	2394543562128 [label="last_state = True" shape=box]
-	2394543562272 [label="else:" shape=diamond]
-	2394543562416 [label="if last_state == True:" shape=diamond]
-	2394543562560 [label="lines[i][1] += '\\n' + combined_lines" shape=box]
-	2394543562704 [label="combined_lines = \"\"" shape=box]
-	2394543562848 [label="last_state = False" shape=box]
-	2394543562992 [label="def main(file_name = __file__):" shape=box]
-	2394543563136 [label="try:" shape=diamond]
-	2394543563280 [label="with open(file_name, \"r\") as f:" shape=diamond]
-	2394543563424 [label="lines = f.readlines()" shape=box]
-	2394543563568 [label="except Exception as e:" shape=diamond]
-	2394543563712 [label="print(e)" shape=box]
-	2394543563856 [label="remove_lines(lines)" shape=box]
-	2394543564000 [label="merge_lines(lines)" shape=box]
-	2394543564144 [label="dot = graphviz.Digraph()" shape=box]
-	2394543564288 [label="blocks = []" shape=box]
-	2394543564432 [label="for i in range(len(lines)):" shape=diamond]
-	2394543564576 [label="if lines[i][0] == 0:" shape=diamond]
-	2394543564720 [label="blocks.append(Block(lines[i:], dot))" shape=box]
-	2394543564864 [label="for block in blocks:" shape=diamond]
-	2394543565008 [label="block.graph()" shape=box]
-	2394543565152 [label="dot.render('graph', view=True)" shape=box]
-	2394543565296 [label="if __name__ == \"__main__\":" shape=diamond]
-	2394543565440 [label="if len(sys.argv) > 1:" shape=diamond]
-	2394543565584 [label="main(sys.argv[1])" shape=box]
-	2394543565728 [label="else:" shape=diamond]
-	2394543565872 [label="main()" shape=box]
-	2394542818032 -> 2394542230736
-	2394542230736 -> 2394542231376 [label=yes]
-	2394542230736 -> 2394541505152 [label=no]
-	2394542231376 -> 2394541505152
-	2394541505152 -> 2394541505456
-	2394541505456 -> 2394536507248 [label=yes]
-	2394541505456 -> 2394539019264 [label=no]
-	2394536507248 -> 2394538897488
-	2394539019264 -> 2394542269008
-	2394538897488 -> 2394542295120
-	2394542295120 -> 2394542482896 [label=yes]
-	2394542295120 -> 2394542482656 [label=no]
-	2394542482896 -> 2394541405200
-	2394542482656 -> 2394542451952 [label=yes]
-	2394542482656 -> 2394542452176 [label=no]
-	2394542451952 -> 2394541405200
-	2394542452176 -> 2394543473552
-	2394542675888 -> 2394543434768
-	2394543434768 -> 2394543434928 [label=yes]
-	2394543434768 -> 2394542399152 [label=no]
-	2394542399152 -> 2394542399296
-	2394542399296 -> 2394542399440 [label=yes]
-	2394542399440 -> 2394542399584
-	2394542399584 -> 2394542400016 [label=yes]
-	2394542400736 -> 2394542400592
-	2394542400592 -> 2394542401024
-	2394542401024 -> 2394542400880 [label=yes]
-	2394542400880 -> 2394542401168
-	2394542401168 -> 2394542401456 [label=yes]
-	2394542401456 -> 2394542401744
-	2394542401744 -> 2394542401600
-	2394542401600 -> 2394542401888 [label=yes]
-	2394542401600 -> 2394542402176 [label=no]
-	2394542401888 -> 2394542402176
-	2394542402176 -> 2394542402320 [label=yes]
-	2394542402320 -> 2394542402608
-	2394542402896 -> 2394542403040
-	2394542403040 -> 2394542403184
-	2394542403184 -> 2394542403328
-	2394542403328 -> 2394542403472
-	2394542403472 -> 2394542403616
-	2394542403616 -> 2394542403760
-	2394542403760 -> 2394542403904 [label=yes]
-	2394542403760 -> 2394542404048 [label=no]
-	2394542403904 -> 2394542404048
-	2394542404192 -> 2394542404480
-	2394542404480 -> 2394542404624
-	2394542404624 -> 2394542404336
-	2394542404336 -> 2394542404768
-	2394542404768 -> 2394542404912
-	2394542404912 -> 2394542405056 [label=yes]
-	2394542404912 -> 2394542405200 [label=no]
-	2394542405056 -> 2394542405200
-	2394542405200 -> 2394542405344 [label=yes]
-	2394542405200 -> 2394542405776 [label=no]
-	2394542405632 -> 2394542406064
-	2394542405344 -> 2394542405488
-	2394542405488 -> 2394542405632
-	2394542405776 -> 2394542405920
-	2394542405920 -> 2394542406208
-	2394542406064 -> 2394542406352
-	2394542406352 -> 2394542406496 [label=yes]
-	2394542406496 -> 2394542406640
-	2394542406640 -> 2394542406784 [label=yes]
-	2394542407072 -> 2394542406928
-	2394542406928 -> 2394542407216
-	2394542407216 -> 2394542407360
-	2394542407504 -> 2394543554640
-	2394543554640 -> 2394543554784 [label=yes]
-	2394543554640 -> 2394543554928 [label=no]
-	2394543554928 -> 2394543555072
-	2394543555216 -> 2394543555360
-	2394543555360 -> 2394543555504 [label=yes]
-	2394543555360 -> 2394543556512 [label=no]
-	2394543555504 -> 2394543555648
-	2394543555648 -> 2394543555792
-	2394543555792 -> 2394543555936 [label=yes]
-	2394543555792 -> 2394543556080 [label=no]
-	2394543556080 -> 2394543556224
-	2394543556512 -> 2394543556656
-	2394543556656 -> 2394543556800
-	2394543556800 -> 2394543556944 [label=yes]
-	2394543556800 -> 2394543557232 [label=no]
-	2394543556944 -> 2394543557232
-	2394543557088 -> 2394543557376
-	2394543557376 -> 2394543557520
-	2394543557520 -> 2394543557664
-	2394543557664 -> 2394543557808
-	2394543557808 -> 2394543557952
-	2394543557952 -> 2394543558096 [label=yes]
-	2394543557952 -> 2394543558528 [label=no]
-	2394543558384 -> 2394543558816
-	2394543558096 -> 2394543558240
-	2394543558240 -> 2394543558384
-	2394543558528 -> 2394543558672 [label=yes]
-	2394543558528 -> 2394543558816 [label=no]
-	2394543558672 -> 2394543558816
-	2394543558816 -> 2394543559104 [label=yes]
-	2394543558816 -> 2394543559392 [label=no]
-	2394543559248 -> 2394543559392
-	2394543559104 -> 2394543559248
-	2394543559680 -> 2394543559968
-	2394543559968 -> 2394543560112
-	2394543560112 -> 2394543559824
-	2394543559824 -> 2394543560256
-	2394543560256 -> 2394543560400
-	2394543560400 -> 2394543560544
-	2394543560544 -> 2394543560688
-	2394543560688 -> 2394543560976
-	2394543560976 -> 2394543561120
-	2394543561120 -> 2394543561408
-	2394543561408 -> 2394543561696 [label=yes]
-	2394543561408 -> 2394543562272 [label=no]
-	2394543561696 -> 2394543561984
-	2394543561984 -> 2394543562128
-	2394543562272 -> 2394543562416
-	2394543562416 -> 2394543562560 [label=yes]
-	2394543562416 -> 2394543562848 [label=no]
-	2394543562704 -> 2394543562848
-	2394543562560 -> 2394543562704
-	2394543562992 -> 2394543563136
-	2394543563136 -> 2394543563280
-	2394543563280 -> 2394543563424
-	2394543563568 -> 2394543563712
-	2394543563856 -> 2394543564000
-	2394543564000 -> 2394543564144
-	2394543564144 -> 2394543564288
-	2394543564288 -> 2394543564432
-	2394543564432 -> 2394543564576
-	2394543564576 -> 2394543564720 [label=yes]
-	2394543564864 -> 2394543565008
-	2394543565296 -> 2394543565440 [label=yes]
-	2394543565440 -> 2394543565584 [label=yes]
-	2394543565440 -> 2394543565728 [label=no]
-	2394543565728 -> 2394543565872
+	1549478333328 [label="def if_test():" shape=box]
+	1549478333968 [label="if True:" shape=diamond]
+	1549477624144 [label="pass#1" shape=box]
+	1549477624448 [label="pass#2" shape=box]
+	1549472528240 [label="if True:" shape=diamond]
+	1549475040256 [label="pass#3" shape=box]
+	1549478273616 [label="else:" shape=diamond]
+	1549474918480 [label="pass#4" shape=box]
+	1549478299728 [label="pass#5" shape=box]
+	1549478503888 [label="if True:" shape=diamond]
+	1549478503648 [label="pass#6" shape=box]
+	1549478472944 [label="elif True:" shape=diamond]
+	1549478473168 [label="pass#7" shape=box]
+	1549479494544 [label="else:" shape=diamond]
+	1549477442576 [label="pass#8" shape=box]
+	1549477442768 [label="pass#9" shape=box]
+	1549478697408 [label="import sys" shape=box]
+	1549478697056 [label="import graphviz" shape=box]
+	1549479455600 [label="def generic_flow(block):" shape=box]
+	1549479455760 [label="if len(block.children) != 0:" shape=diamond]
+	1549478420864 [label="block.dot.edge(str(id(block)), str(id(block.children[0])))" shape=box]
+	1549478420288 [label="else:" shape=diamond]
+	1549478420432 [label="if block.parent is not None:" shape=diamond]
+	1549478420576 [label="self_index = block.parent.children.index(block)" shape=box]
+	1549478420720 [label="if self_index != len(block.parent.children) - 1:" shape=diamond]
+	1549478421584 [label="block.dot.edge(str(id(block)), str(id(block.parent.children[self_index + 1])))" shape=box]
+	1549478421872 [label="def IF_flow(block):" shape=box]
+	1549478421728 [label="block.dot.edge(str(id(block)), str(id(block.children[0])), label=\"yes\")" shape=box]
+	1549478422160 [label="if block.parent is not None:" shape=diamond]
+	1549478422016 [label="self_index = block.parent.children.index(block)" shape=box]
+	1549478422304 [label="if self_index != len(block.parent.children) - 1:" shape=diamond]
+	1549478422592 [label="for i, child in enumerate(block.parent.children[self_index + 1:]):" shape=diamond]
+	1549478422880 [label="keyword = child.keyword" shape=box]
+	1549478422736 [label="if i == 0:" shape=diamond]
+	1549478423024 [label="block.dot.edge(str(id(block)), str(id(child)), label=\"no\")" shape=box]
+	1549478423312 [label="if keyword != \"elif\" and keyword != \"else\":" shape=diamond]
+	1549478423456 [label="block.dot.edge(str(id(block.get_end_leaf())), str(id(child)))" shape=box]
+	1549478423744 [label=break shape=box]
+	1549478423888 [label="Keyword_Map = {\n\"if\": [\"diamond\", IF_flow],\n\"elif\": [\"diamond\", IF_flow],\n\"else\": [\"diamond\", generic_flow],\n\"for\": [\"diamond\", generic_flow],\n\"while\": [\"diamond\", generic_flow],\n\"try\": [\"diamond\", generic_flow],\n\"except\": [\"diamond\", generic_flow],\n\"finally\": [\"diamond\", generic_flow],\n\"with\": [\"diamond\", generic_flow],\n\"def\": [\"box\", generic_flow],\n\"class\": [\"box\", generic_flow]\n}\n" shape=box]
+	1549478424032 [label="class Block:" shape=box]
+	1549478424176 [label="def __init__(self, content, dot, parent = None):" shape=box]
+	1549478424320 [label="self.parent = parent" shape=box]
+	1549478424464 [label="self.content = []" shape=box]
+	1549478424608 [label="self.dot = dot" shape=box]
+	1549478424752 [label="self.keyword = None" shape=box]
+	1549478424896 [label="self.graph_func = None" shape=box]
+	1549478425040 [label="self.node = None" shape=box]
+	1549478425184 [label="self.first_line = None" shape=box]
+	1549478425328 [label="if parent is not None:" shape=diamond]
+	1549478425472 [label="self.first_line = content[0][1]" shape=box]
+	1549478425616 [label="for line in content[1:]:" shape=diamond]
+	1549478425760 [label="if line[0] == 0:" shape=diamond]
+	1549478425904 [label=break shape=box]
+	1549478426048 [label="self.content.append([line[0] - 1, line[1]])" shape=box]
+	1549478426192 [label="keyword = self.first_line.split()[0]" shape=box]
+	1549478426336 [label="if keyword[-1] == \":\":" shape=diamond]
+	1549478426480 [label="keyword = keyword[0:-1]" shape=box]
+	1549478426624 [label="if keyword in Keyword_Map:" shape=diamond]
+	1549478426768 [label="self.keyword = keyword" shape=box]
+	1549478426912 [label="self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = Keyword_Map[keyword][0])" shape=box]
+	1549478427056 [label="self.graph_func = Keyword_Map[keyword][1]" shape=box]
+	1549478427200 [label="else:" shape=diamond]
+	1549478427344 [label="self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = \"box\")" shape=box]
+	1549478427632 [label="self.graph_func = generic_flow" shape=box]
+	1549478427488 [label="else:" shape=diamond]
+	1549478427776 [label="self.content = content" shape=box]
+	1549478427920 [label="self.children = []" shape=box]
+	1549478428064 [label="if len(self.content) != 0:" shape=diamond]
+	1549478428208 [label="for i in range(len(self.content)):" shape=diamond]
+	1549478428352 [label="if self.content[i][0] == 0:" shape=diamond]
+	1549478428496 [label="self.children.append(Block(self.content[i:], self.dot, parent = self))" shape=box]
+	1549479592160 [label="def graph(self):" shape=box]
+	1549479592016 [label="if self.graph_func is not None:" shape=diamond]
+	1549479592304 [label="self.graph_func(self)" shape=box]
+	1549479592448 [label="for child in self.children:" shape=diamond]
+	1549479592592 [label="child.graph()" shape=box]
+	1549479592736 [label="def get_end_leaf(self):" shape=box]
+	1549479592880 [label="if len(self.children) == 0:" shape=diamond]
+	1549479593024 [label="return self" shape=box]
+	1549479593168 [label="else:" shape=diamond]
+	1549479593312 [label="return self.children[-1].get_end_leaf()" shape=box]
+	1549479593456 [label="def num_indentation(line, i):" shape=box]
+	1549479593600 [label="if line[0] == '\\t':" shape=diamond]
+	1549479593744 [label="count = 0" shape=box]
+	1549479593888 [label="for char in line:" shape=diamond]
+	1549479594032 [label="if char == '\\t':" shape=diamond]
+	1549479594176 [label="count += 1" shape=box]
+	1549479594320 [label="else:" shape=diamond]
+	1549479594464 [label=break shape=box]
+	1549479594608 [label="return count" shape=box]
+	1549479594752 [label="else:" shape=diamond]
+	1549479594896 [label="num_intdent = (len(line) - len(line.strip())) / 4" shape=box]
+	1549479595040 [label="if not num_intdent.is_integer():" shape=diamond]
+	1549479595184 [label="raise IndentationError(f\"Bro. {num_intdent * 4} spaces at line {i}? What is wrong with you?\")" shape=box]
+	1549479595472 [label="return int((len(line) - len(line.strip())) / 4)" shape=box]
+	1549479595328 [label="def remove_lines(lines):" shape=box]
+	1549479595616 [label="open_multiline = False" shape=box]
+	1549479595760 [label="for i in reversed(range(len(lines))):" shape=diamond]
+	1549479595904 [label="lines[i] = lines[i].rstrip()" shape=box]
+	1549479596048 [label="line = lines[i]" shape=box]
+	1549479596192 [label="if (line.strip().startswith(\"\\\"\\\"\\\"\") or line.strip().startswith(\"\\\'\\\'\\\'\")) and open_multiline == True:" shape=diamond]
+	1549479596336 [label="open_multiline = False" shape=box]
+	1549479596480 [label="lines.pop(i)" shape=box]
+	1549479596624 [label=continue shape=box]
+	1549479596768 [label="elif (line.strip().startswith(\"\\\"\\\"\\\"\") or line.strip().startswith(\"\\\'\\\'\\\'\")) and open_multiline == False:" shape=diamond]
+	1549479596912 [label="open_multiline = True" shape=box]
+	1549479597056 [label="if open_multiline or len(line) == 0 or line.strip()[0] == '#':" shape=diamond]
+	1549479597344 [label="lines.pop(i)" shape=box]
+	1549479597488 [label=continue shape=box]
+	1549479597632 [label="lines[i] = [num_indentation(line, i + 1), line.strip()]" shape=box]
+	1549479597920 [label="def merge_lines(lines):" shape=box]
+	1549479598208 [label="open_parentheses = 0" shape=box]
+	1549479598352 [label="open_square = 0" shape=box]
+	1549479598064 [label="open_curly = 0" shape=box]
+	1549479598496 [label="last_state = False" shape=box]
+	1549479598640 [label="combined_lines = \"\"" shape=box]
+	1549479598784 [label="for i in reversed(range(len(lines))):" shape=diamond]
+	1549479598928 [label="open_parentheses += lines[i][1].count(\")\") - lines[i][1].count(\"(\")" shape=box]
+	1549479599216 [label="open_square += lines[i][1].count(\"]\") - lines[i][1].count(\"[\")" shape=box]
+	1549479599360 [label="open_curly += lines[i][1].count(\"}\") - lines[i][1].count(\"{\")" shape=box]
+	1549479599648 [label="if open_parentheses + open_square + open_curly > 0:" shape=diamond]
+	1549479599936 [label="combined_lines = lines[i][1] + '\\n' + combined_lines" shape=box]
+	1549479600224 [label="lines.pop(i)" shape=box]
+	1549479600368 [label="last_state = True" shape=box]
+	1549479600512 [label="else:" shape=diamond]
+	1549479600656 [label="if last_state == True:" shape=diamond]
+	1549479600800 [label="lines[i][1] += '\\n' + combined_lines" shape=box]
+	1549479600944 [label="combined_lines = \"\"" shape=box]
+	1549479601088 [label="last_state = False" shape=box]
+	1549479601376 [label="def main(file_name = __file__):" shape=box]
+	1549479601520 [label="try:" shape=diamond]
+	1549479601664 [label="with open(file_name, \"r\") as f:" shape=diamond]
+	1549479601808 [label="lines = f.readlines()" shape=box]
+	1549479601952 [label="except Exception as e:" shape=diamond]
+	1549479602096 [label="print(e)" shape=box]
+	1549479602240 [label="remove_lines(lines)" shape=box]
+	1549479602384 [label="merge_lines(lines)" shape=box]
+	1549479602528 [label="dot = graphviz.Digraph()" shape=box]
+	1549479602672 [label="program_block = Block(lines, dot)" shape=box]
+	1549479602816 [label="program_block.graph()" shape=box]
+	1549479602960 [label="dot.render('graph', view=True)" shape=box]
+	1549479601232 [label="if __name__ == \"__main__\":" shape=diamond]
+	1549479603104 [label="if len(sys.argv) > 1:" shape=diamond]
+	1549479603248 [label="main(sys.argv[1])" shape=box]
+	1549479603392 [label="else:" shape=diamond]
+	1549479603536 [label="main()" shape=box]
+	1549478333328 -> 1549478333968
+	1549478333968 -> 1549477624144 [label=yes]
+	1549478333968 -> 1549477624448 [label=no]
+	1549477624144 -> 1549477624448
+	1549477624448 -> 1549472528240
+	1549472528240 -> 1549475040256 [label=yes]
+	1549472528240 -> 1549478273616 [label=no]
+	1549475040256 -> 1549478299728
+	1549478273616 -> 1549474918480
+	1549478299728 -> 1549478503888
+	1549478503888 -> 1549478503648 [label=yes]
+	1549478503888 -> 1549478472944 [label=no]
+	1549478503648 -> 1549477442768
+	1549478472944 -> 1549478473168 [label=yes]
+	1549478472944 -> 1549479494544 [label=no]
+	1549478473168 -> 1549477442768
+	1549479494544 -> 1549477442576
+	1549478697408 -> 1549478697056
+	1549478697056 -> 1549479455600
+	1549479455600 -> 1549479455760
+	1549479455760 -> 1549478420864 [label=yes]
+	1549479455760 -> 1549478420288 [label=no]
+	1549478420288 -> 1549478420432
+	1549478420432 -> 1549478420576 [label=yes]
+	1549478420576 -> 1549478420720
+	1549478420720 -> 1549478421584 [label=yes]
+	1549478421872 -> 1549478421728
+	1549478421728 -> 1549478422160
+	1549478422160 -> 1549478422016 [label=yes]
+	1549478422016 -> 1549478422304
+	1549478422304 -> 1549478422592 [label=yes]
+	1549478422592 -> 1549478422880
+	1549478422880 -> 1549478422736
+	1549478422736 -> 1549478423024 [label=yes]
+	1549478422736 -> 1549478423312 [label=no]
+	1549478423024 -> 1549478423312
+	1549478423312 -> 1549478423456 [label=yes]
+	1549478423456 -> 1549478423744
+	1549478423888 -> 1549478424032
+	1549478424032 -> 1549478424176
+	1549478424176 -> 1549478424320
+	1549478424320 -> 1549478424464
+	1549478424464 -> 1549478424608
+	1549478424608 -> 1549478424752
+	1549478424752 -> 1549478424896
+	1549478424896 -> 1549478425040
+	1549478425040 -> 1549478425184
+	1549478425184 -> 1549478425328
+	1549478425328 -> 1549478425472 [label=yes]
+	1549478425328 -> 1549478427488 [label=no]
+	1549478427632 -> 1549478427920
+	1549478425472 -> 1549478425616
+	1549478425616 -> 1549478425760
+	1549478425760 -> 1549478425904 [label=yes]
+	1549478425760 -> 1549478426048 [label=no]
+	1549478425904 -> 1549478426048
+	1549478426192 -> 1549478426336
+	1549478426336 -> 1549478426480 [label=yes]
+	1549478426336 -> 1549478426624 [label=no]
+	1549478426480 -> 1549478426624
+	1549478426624 -> 1549478426768 [label=yes]
+	1549478426624 -> 1549478427200 [label=no]
+	1549478426768 -> 1549478426912
+	1549478426912 -> 1549478427056
+	1549478427200 -> 1549478427344
+	1549478427344 -> 1549478427632
+	1549478427488 -> 1549478427776
+	1549478427920 -> 1549478428064
+	1549478428064 -> 1549478428208 [label=yes]
+	1549478428208 -> 1549478428352
+	1549478428352 -> 1549478428496 [label=yes]
+	1549479592160 -> 1549479592016
+	1549479592016 -> 1549479592304 [label=yes]
+	1549479592016 -> 1549479592448 [label=no]
+	1549479592304 -> 1549479592448
+	1549479592448 -> 1549479592592
+	1549479592736 -> 1549479592880
+	1549479592880 -> 1549479593024 [label=yes]
+	1549479592880 -> 1549479593168 [label=no]
+	1549479593168 -> 1549479593312
+	1549479593456 -> 1549479593600
+	1549479593600 -> 1549479593744 [label=yes]
+	1549479593600 -> 1549479594752 [label=no]
+	1549479593744 -> 1549479593888
+	1549479593888 -> 1549479594032
+	1549479594032 -> 1549479594176 [label=yes]
+	1549479594032 -> 1549479594320 [label=no]
+	1549479594320 -> 1549479594464
+	1549479594752 -> 1549479594896
+	1549479594896 -> 1549479595040
+	1549479595040 -> 1549479595184 [label=yes]
+	1549479595040 -> 1549479595472 [label=no]
+	1549479595184 -> 1549479595472
+	1549479595328 -> 1549479595616
+	1549479595616 -> 1549479595760
+	1549479595760 -> 1549479595904
+	1549479595904 -> 1549479596048
+	1549479596048 -> 1549479596192
+	1549479596192 -> 1549479596336 [label=yes]
+	1549479596192 -> 1549479596768 [label=no]
+	1549479596624 -> 1549479597056
+	1549479596336 -> 1549479596480
+	1549479596480 -> 1549479596624
+	1549479596768 -> 1549479596912 [label=yes]
+	1549479596768 -> 1549479597056 [label=no]
+	1549479596912 -> 1549479597056
+	1549479597056 -> 1549479597344 [label=yes]
+	1549479597056 -> 1549479597632 [label=no]
+	1549479597488 -> 1549479597632
+	1549479597344 -> 1549479597488
+	1549479597920 -> 1549479598208
+	1549479598208 -> 1549479598352
+	1549479598352 -> 1549479598064
+	1549479598064 -> 1549479598496
+	1549479598496 -> 1549479598640
+	1549479598640 -> 1549479598784
+	1549479598784 -> 1549479598928
+	1549479598928 -> 1549479599216
+	1549479599216 -> 1549479599360
+	1549479599360 -> 1549479599648
+	1549479599648 -> 1549479599936 [label=yes]
+	1549479599648 -> 1549479600512 [label=no]
+	1549479599936 -> 1549479600224
+	1549479600224 -> 1549479600368
+	1549479600512 -> 1549479600656
+	1549479600656 -> 1549479600800 [label=yes]
+	1549479600656 -> 1549479601088 [label=no]
+	1549479600944 -> 1549479601088
+	1549479600800 -> 1549479600944
+	1549479601376 -> 1549479601520
+	1549479601520 -> 1549479601664
+	1549479601664 -> 1549479601808
+	1549479601952 -> 1549479602096
+	1549479602240 -> 1549479602384
+	1549479602384 -> 1549479602528
+	1549479602528 -> 1549479602672
+	1549479602672 -> 1549479602816
+	1549479602816 -> 1549479602960
+	1549479601232 -> 1549479603104 [label=yes]
+	1549479603104 -> 1549479603248 [label=yes]
+	1549479603104 -> 1549479603392 [label=no]
+	1549479603392 -> 1549479603536
 }

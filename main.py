@@ -41,7 +41,7 @@ def if_test():
 import sys
 import graphviz
 
-def generic(block):
+def generic_flow(block):
     if len(block.children) != 0:
         block.dot.edge(str(id(block)), str(id(block.children[0])))
     else:
@@ -50,7 +50,7 @@ def generic(block):
             if self_index != len(block.parent.children) - 1:
                 block.dot.edge(str(id(block)), str(id(block.parent.children[self_index + 1])))
 
-def IF(block):
+def IF_flow(block):
     block.dot.edge(str(id(block)), str(id(block.children[0])), label="yes")
 
     if block.parent is not None:
@@ -65,17 +65,17 @@ def IF(block):
                     break
 
 Keyword_Map = {
-    "if": ["diamond", IF],
-    "elif": ["diamond", IF],
-    "else": ["diamond", generic],
-    "for": ["diamond", generic],
-    "while": ["diamond", generic],
-    "try": ["diamond", generic],
-    "except": ["diamond", generic],
-    "finally": ["diamond", generic],
-    "with": ["diamond", generic],
-    "def": ["box", generic],
-    "class": ["box", generic]
+    "if": ["diamond", IF_flow],
+    "elif": ["diamond", IF_flow],
+    "else": ["diamond", generic_flow],
+    "for": ["diamond", generic_flow],
+    "while": ["diamond", generic_flow],
+    "try": ["diamond", generic_flow],
+    "except": ["diamond", generic_flow],
+    "finally": ["diamond", generic_flow],
+    "with": ["diamond", generic_flow],
+    "def": ["box", generic_flow],
+    "class": ["box", generic_flow]
 }
 
 class Block:
@@ -83,28 +83,34 @@ class Block:
         self.parent = parent
         self.content = []
         self.dot = dot
-        for line in content[1:]:
-            if line[0] == 0:
-                break
-            self.content.append([line[0] - 1, line[1]])
-        
         self.keyword = None
         self.graph_func = None
         self.node = None
+        self.first_line = None
 
-        self.first_line = content[0][1]
-        keyword = self.first_line.split()[0]
-        if keyword[-1] == ":":
-            keyword = keyword[0:-1]
+        if parent is not None:
+            self.first_line = content[0][1]
 
-        if keyword in Keyword_Map:
-            self.keyword = keyword
-            self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = Keyword_Map[keyword][0])
-            self.graph_func = Keyword_Map[keyword][1]
+            for line in content[1:]:
+                if line[0] == 0:
+                    break
+                self.content.append([line[0] - 1, line[1]])
+
+            keyword = self.first_line.split()[0]
+            if keyword[-1] == ":":
+                keyword = keyword[0:-1]
+
+            if keyword in Keyword_Map:
+                self.keyword = keyword
+                self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = Keyword_Map[keyword][0])
+                self.graph_func = Keyword_Map[keyword][1]
+            
+            else:
+                self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = "box")
+                self.graph_func = generic_flow
         
         else:
-            self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = "box")
-            self.graph_func = generic
+            self.content = content
 
         self.children = []
 
@@ -114,7 +120,8 @@ class Block:
                     self.children.append(Block(self.content[i:], self.dot, parent = self))
 
     def graph(self):
-        self.graph_func(self)
+        if self.graph_func is not None:
+            self.graph_func(self)
 
         for child in self.children:
             child.graph()
@@ -216,13 +223,9 @@ def main(file_name = __file__):
     # exit()
 
     dot = graphviz.Digraph()
-    blocks = []
-    for i in range(len(lines)):
-        if lines[i][0] == 0:
-            blocks.append(Block(lines[i:], dot))
     
-    for block in blocks:
-        block.graph()
+    program_block = Block(lines, dot)
+    program_block.graph()
 
     dot.render('graph', view=True)
 
