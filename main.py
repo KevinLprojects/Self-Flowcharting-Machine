@@ -15,75 +15,67 @@ Classes will have very basic graphs showing attributes and lists of methods (met
 Subclasses will have arrows pointing to the parent class
 """
 
-# FOR NOW MULTILINE STRINGS with ''' or """ don't work
-def if_test():
-    #condition1
-    if True:
-        pass#1
-    pass#2
+# left to do:
 
-    #condition2
-    if True:
-        pass#3
-    else:
-        pass#4
-    pass#5
-
-    #condition3
-    if True:
-        pass#6
-    elif True:
-        pass#7
-    else:
-        pass#8
-    pass#9
+# finish adding other keyword flows
+# add break, continue, return, exit(), quit()
+# identify input output lines
+# make entry point before the first line of code executed
+# create special inport, class, function blocks
+# make special user defined function(calls) and object blocks
+# combine adjacent process blocks
+# improve layout of the chart (entry point -> Classes(methods) -> generic functions)
+# maybe use seq2seq transformer to put node labels in plane english?
 
 import sys
 import graphviz
 
 def generic_flow(block):
+    # connect block to the first block inside its indentation (if it causes an indentation)
     if len(block.children) != 0:
+        print("unsupported indentation causing keyword: ", block.first_line) # if a block causes an intendation but is calling generic flow, it is not a supported keyword
         Edge(block, block.children[0])
+
     else:
+        # if the block has a sibling lower than it, then connect the two
         if block.parent is not None:
             self_index = block.parent.children.index(block)
             if self_index != len(block.parent.children) - 1:
                 Edge(block, block.parent.children[self_index + 1])
 
 def IF_flow(block):
+    # connect the block to its child (the statement exicuted when the condition is True)
     Edge(block, block.children[0], "yes")
-
+    # if the block has siblings lower than it, then figure out how to connect them
     if block.parent is not None:
         self_index = block.parent.children.index(block)
         if self_index != len(block.parent.children) - 1:
             for i, child in enumerate(block.parent.children[self_index + 1:]):
                 keyword = child.keyword
+                # connect the first lower sibling (the statement exictuted when the condition is False)
                 if i == 0:
                     Edge(block, child, "no")
+
+                # connect the last node in the if's inside stantement (exicuted when the condition is True) to the first non elif/else block
                 if keyword != "elif" and keyword != "else":
                     Edge(block.get_end_leaf(), child)
                     break
 
 def ELSE_flow(block):
-    if len(block.children) != 0:
-        Edge(block, block.children[0])
-    
+    # connect all incoming connections to the child (the statement exicuted inside the else)
     for edge in block.edges:
-        if edge.direction(block):
-            else_target = edge.target_block
-            break
-
-    for edge in block.edges:
-        if not edge.direction(block):
-            Edge(edge.source_block, else_target, label = edge.label)
+        Edge(edge.source_block, block.children[0], label = edge.label)
     
+    # prevent the else block from being displayed
     block.hide()
 
+    # if the block has a sibling lower than it, then connect the last block in the inside of the else statement to it
     if block.parent is not None:
         self_index = block.parent.children.index(block)
         if self_index != len(block.parent.children) - 1:
             Edge(block.get_end_leaf(), block.parent.children[self_index + 1])
 
+# map between python keywords and their node shapes and control flows
 Keyword_Map = {
     "if": ["diamond", IF_flow],
     "elif": ["diamond", IF_flow],
@@ -108,19 +100,22 @@ class Edge:
         source_block.edges.append(self)
         target_block.edges.append(self)
     
+    # returns the True if the edge goes away from the provided block
     def direction(self, block):
         if block == self.source_block:
             return True
         return False
-    
+
     def hide(self):
         self.drawn = True
     
     def draw(self, dot: graphviz.Digraph):
+        # don't draw if the edge has already been drawn
         if self.drawn:
             return
 
         self.drawn = True
+        # add to the graphviz Digraph
         dot.edge(str(id(self.source_block)), str(id(self.target_block)), label=self.label)
     
 class Block:
@@ -135,7 +130,7 @@ class Block:
         self.edges = [] #[source object, target object, label]
 
         if parent is not None:
-            self.first_line = repr(content[0][1])[1:-1]
+            self.first_line = repr(remove_comment(content[0][1]))[1:-1]
 
             for line in content[1:]:
                 if line[0] == 0:
@@ -150,32 +145,34 @@ class Block:
                 self.keyword = keyword
                 self.shape = Keyword_Map[keyword][0]
                 self.graph_func = Keyword_Map[keyword][1]
-            
             else:
                 self.shape = "box"
                 self.graph_func = generic_flow
-        
         else:
             self.content = content
 
         self.children = []
 
+        # recursively adds nodes until reaching lines with no indented children
         if len(self.content) != 0:
             for i in range(len(self.content)):
                 if self.content[i][0] == 0:
                     self.children.append(Block(self.content[i:], parent = self))
 
+    # prevents the node and its edges from being displayed
     def hide(self):
         self.shape = None
         for edge in self.edges:
             edge.hide()
 
+    # gets the end line inside the current block
     def get_end_leaf(self):
         if len(self.children) == 0:
             return self
         else:
             return self.children[-1].get_end_leaf()
 
+    # adds connections to blocks based on the control flow associated with the block keyword
     def draw_flow(self):
         if self.graph_func is not None:
             self.graph_func(self)
@@ -183,9 +180,11 @@ class Block:
         for child in self.children:
             child.draw_flow()
     
+    # creates a graphviz node for the current block
     def draw_node(self, dot: graphviz.Digraph):
         dot.node(str(id(self)), self.first_line, shape=self.shape)
 
+    # creates graphviz nodes for each block recursively
     def draw_graph_nodes(self, dot: graphviz.Digraph):
         if self.parent is not None and self.shape is not None:
             self.draw_node(dot)
@@ -193,6 +192,7 @@ class Block:
         for child in self.children:
             child.draw_graph_nodes(dot)
     
+    # creates graphviz edges for each blocks edges recursively
     def draw_graph_edges(self, dot: graphviz.Digraph):
         if self.parent is not None:
             for edge in self.edges:
@@ -201,10 +201,11 @@ class Block:
         for child in self.children:
             child.draw_graph_edges(dot)
     
+    # combines the drawing of nodes and edges
     def draw_graph(self, dot: graphviz.Digraph):
-        self.draw_graph_edges(dot)
         self.draw_graph_nodes(dot)
-
+        self.draw_graph_edges(dot)
+        
 def num_indentation(line, i):
     # check for tab character
     if line[0] == '\t':
@@ -216,16 +217,16 @@ def num_indentation(line, i):
             else:
                 break
         return count
-    
     else:
         # number of indentations
         num_intdent = (len(line) - len(line.strip())) / 4
         # if the user is a 
         if not num_intdent.is_integer():
-            raise IndentationError(f"Bro. {num_intdent * 4} spaces at line {i}? What is wrong with you?")
+            raise IndentationError(f"Bro. {num_intdent * 4} spaces? What is wrong with you?")
         
         return int((len(line) - len(line.strip())) / 4)
-    
+
+# removes blank and commented out lines
 def remove_lines(lines):
     # boolean to keep track of open multiline comments
     open_multiline = False
@@ -253,6 +254,14 @@ def remove_lines(lines):
         
         lines[i] = [num_indentation(line, i + 1), line.strip()]
 
+# removes comments from the end of a line
+def remove_comment(line):
+    index = line.find("#")
+    if index != -1:
+        return(line[0:index].strip())
+    return line
+
+# combines lines that are part of the same statement
 def merge_lines(lines):
     open_parentheses = 0
     open_square = 0
@@ -261,15 +270,18 @@ def merge_lines(lines):
     combined_lines = ""
 
     for i in reversed(range(len(lines))):
+        # count open brackets
         open_parentheses += lines[i][1].count(")") - lines[i][1].count("(")
         open_square += lines[i][1].count("]") - lines[i][1].count("[")
         open_curly += lines[i][1].count("}") - lines[i][1].count("{")
 
+        # if current line is part of a multiline statement, add it to combined_lines and remove the line
         if open_parentheses + open_square + open_curly > 0:
             combined_lines = lines[i][1] + '\n' + combined_lines
             lines.pop(i)
             last_state = True
         else:
+            # if the last line was in a multiline, and the current line is not, then add the combined lines to the current line
             if last_state == True:
                 lines[i][1] += '\n' + combined_lines
                 combined_lines = ""
@@ -289,13 +301,20 @@ def main(file_name = __file__):
     # parse the text
     remove_lines(lines)
     merge_lines(lines)
-
-    dot = graphviz.Digraph()
     
+    # create blocks
     program_block = Block(lines)
+
+    # connect blocks
     program_block.draw_flow()
+
+    # initialize graph
+    dot = graphviz.Digraph()
+
+    # draw graph from block tree
     program_block.draw_graph(dot)
 
+    # create graph pdf, dot file, and open pdf
     dot.render('graph', view=True)
 
 if __name__ == "__main__":
@@ -304,9 +323,3 @@ if __name__ == "__main__":
         main(sys.argv[1])
     else:
         main()
-
-# then go through line level graph and add connections for keyword pairs (if elif else, try except else finaly, def return) and non depth based keywords (break, continue, exit(), quit())
-
-# finally, I will merge nodes on the graph that perform similar functions (adjacent process nodes (ISO 5807))
-
-# then maybe I'll add some sort of class representation
