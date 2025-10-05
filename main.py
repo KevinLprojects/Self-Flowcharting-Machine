@@ -228,6 +228,28 @@ def main(file_name = __file__):
     dot.render('graph', view=True)
 
 # graphviz extension (I was trying to extend it but I gave up). graphviz doesn't let you delete nodes or connections :(
+def get_edges(dot: graphviz.Digraph, id):
+    edges = []
+    node = True
+    for line in dot.body:
+        if str(id) in line:
+            print(line)
+            if node:
+                node = False
+            else:
+                id2_and_label = line.strip().replace(str(id), "").replace(" -> ", "").split()
+                id2 = id2_and_label[0]
+                label = None
+                if len(id2_and_label) > 1 and "label=" in id2_and_label[1]:
+                    i = id2_and_label[1].index("label=")
+                    label = id2_and_label[1][i:].split()[0]
+
+                if line.strip().index(str(id)) == 0:
+                    edges.append([id, type(id)(line.strip().replace(str(id), "").replace(" -> ", "").split()[0]), label])
+                else:
+                    edges.append([type(id)(line.strip().replace(str(id), "").replace(" -> ", "").split()[0]), id, label])
+    return edges
+
 def remove_edge(dot: graphviz.Digraph, id1, id2):
     for line in dot.body:
         if str(id1) + " -> " + str(id2) in line:
