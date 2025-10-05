@@ -64,6 +64,9 @@ def IF_flow(block):
                     block.dot.edge(str(id(block.get_end_leaf())), str(id(child)))
                     break
 
+def ELSE_flow(block):
+    pass
+
 Keyword_Map = {
     "if": ["diamond", IF_flow],
     "elif": ["diamond", IF_flow],
@@ -213,14 +216,9 @@ def main(file_name = __file__):
     except Exception as e:
         print(e)
 
-    # process the text
+    # parse the text
     remove_lines(lines)
     merge_lines(lines)
-
-    # for line in lines:
-    #     print(line)
-
-    # exit()
 
     dot = graphviz.Digraph()
     
@@ -228,6 +226,18 @@ def main(file_name = __file__):
     program_block.graph()
 
     dot.render('graph', view=True)
+
+# graphviz extension (I was trying to extend it but I gave up). graphviz doesn't let you delete nodes or connections :(
+def remove_edge(dot: graphviz.Digraph, id1, id2):
+    for line in dot.body:
+        if str(id1) + " -> " + str(id2) in line:
+            dot.body.remove(line)
+            return
+
+def remove_node(dot: graphviz.Digraph, id):
+    for line in dot.body:
+        if str(id) in line:
+            dot.body.remove(line)
 
 if __name__ == "__main__":
     # check for file name arg
