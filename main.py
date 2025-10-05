@@ -16,27 +16,57 @@ Subclasses will have arrows pointing to the parent class
 """
 
 # FOR NOW MULTILINE STRINGS with ''' or """ don't work
+def if_test():
+    #condition1
+    if True:
+        pass#1
+    pass#2
+
+    #condition2
+    if True:
+        pass#3
+    else:
+        pass#4
+    pass#5
+
+    #condition3
+    if True:
+        pass#6
+    elif True:
+        pass#7
+    else:
+        pass#8
+    pass#9
 
 import sys
 import graphviz
 
-def generic(Block):
-    if len(Block.children) != 0:
-        Block.dot.edge(str(id(Block)), str(id(Block.children[0])))
+def generic(block):
+    if len(block.children) != 0:
+        block.dot.edge(str(id(block)), str(id(block.children[0])))
     else:
-        if Block.parent is not None:
-            self_index = Block.parent.children.index(Block)
-            if self_index != len(Block.parent.children) - 1:
-                Block.dot.edge(str(id(Block)), str(id(Block.parent.children[self_index + 1])))
+        if block.parent is not None:
+            self_index = block.parent.children.index(block)
+            if self_index != len(block.parent.children) - 1:
+                block.dot.edge(str(id(block)), str(id(block.parent.children[self_index + 1])))
 
-# def IF(Block):
-#     Block.dot.edge(str(id(Block)), str(id(Block.children[0])), label="yes")
+def IF(block):
+    block.dot.edge(str(id(block)), str(id(block.children[0])), label="yes")
 
-#     index_of_current_child = Block.parent.children
+    if block.parent is not None:
+        self_index = block.parent.children.index(block)
+        if self_index != len(block.parent.children) - 1:
+            for i, child in enumerate(block.parent.children[self_index + 1:]):
+                keyword = child.keyword
+                if i == 0:
+                    block.dot.edge(str(id(block)), str(id(child)), label="no")
+                if keyword != "elif" and keyword != "else":
+                    block.dot.edge(str(id(block.get_end_leaf())), str(id(child)))
+                    break
 
 Keyword_Map = {
-    "if": ["diamond", generic],
-    "elif": ["diamond", generic],
+    "if": ["diamond", IF],
+    "elif": ["diamond", IF],
     "else": ["diamond", generic],
     "for": ["diamond", generic],
     "while": ["diamond", generic],
@@ -62,16 +92,18 @@ class Block:
         self.graph_func = None
         self.node = None
 
-        first_line = content[0][1]
-        keyword = first_line.split()[0]
+        self.first_line = content[0][1]
+        keyword = self.first_line.split()[0]
+        if keyword[-1] == ":":
+            keyword = keyword[0:-1]
 
         if keyword in Keyword_Map:
             self.keyword = keyword
-            self.node = self.dot.node(str(id(self)), first_line, shape = Keyword_Map[keyword][0])
+            self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = Keyword_Map[keyword][0])
             self.graph_func = Keyword_Map[keyword][1]
         
         else:
-            self.node = self.dot.node(str(id(self)), first_line, shape = "box")
+            self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = "box")
             self.graph_func = generic
 
         self.children = []
@@ -86,6 +118,12 @@ class Block:
 
         for child in self.children:
             child.graph()
+    
+    def get_end_leaf(self):
+        if len(self.children) == 0:
+            return self
+        else:
+            return self.children[-1].get_end_leaf()
 
 def num_indentation(line, i):
     # check for tab character
@@ -122,21 +160,16 @@ def remove_lines(lines):
         if (line.strip().startswith("\"\"\"") or line.strip().startswith("\'\'\'")) and open_multiline == True:
             open_multiline = False
             lines.pop(i)
-            print("comment ended")
             continue
 
         # if multiline comment starts, then set open_multiline to True
         elif (line.strip().startswith("\"\"\"") or line.strip().startswith("\'\'\'")) and open_multiline == False:
             open_multiline = True
-            print("comment start")
         
         # remove comments and empty lines
         if open_multiline or len(line) == 0 or line.strip()[0] == '#':
             lines.pop(i)
-            print("in comment")
             continue
-
-        print('\n')
         
         lines[i] = [num_indentation(line, i + 1), line.strip()]
 
@@ -191,7 +224,7 @@ def main(file_name = __file__):
     for block in blocks:
         block.graph()
 
-    dot.render('simple_graph.pdf', view=True)
+    dot.render('graph', view=True)
 
 if __name__ == "__main__":
     # check for file name arg
