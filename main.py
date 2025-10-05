@@ -43,15 +43,15 @@ import graphviz
 
 def generic_flow(block):
     if len(block.children) != 0:
-        block.edges.append((str(id(block)), str(id(block.children[0])), ""))
+        Edge(block, block.children[0])
     else:
         if block.parent is not None:
             self_index = block.parent.children.index(block)
             if self_index != len(block.parent.children) - 1:
-                block.edges.append((str(id(block)), str(id(block.parent.children[self_index + 1])), ""))
+                Edge(block, block.parent.children[self_index + 1])
 
 def IF_flow(block):
-    block.edges.append((str(id(block)), str(id(block.children[0])), "yes"))
+    Edge(block, block.children[0], "yes")
 
     if block.parent is not None:
         self_index = block.parent.children.index(block)
@@ -59,9 +59,9 @@ def IF_flow(block):
             for i, child in enumerate(block.parent.children[self_index + 1:]):
                 keyword = child.keyword
                 if i == 0:
-                    block.edges.append((str(id(block)), str(id(child)), "no"))
+                    Edge(block, child, "no")
                 if keyword != "elif" and keyword != "else":
-                    block.edges.append((str(id(block.get_end_leaf())), str(id(child)), ""))
+                    Edge(block.get_end_leaf(), child)
                     break
 
 def ELSE_flow(block):
@@ -105,6 +105,27 @@ Keyword_Map = {
     "class": ["box", generic_flow]
 }
 
+class Edge:
+    def __init__(self, source_block, target_block, label=""):
+        self.source_block = source_block
+        self.target_block = target_block
+        self.label=""
+        self.drawn = False
+
+        source_block.edges.append(self)
+        target_block.edges.append(self)
+    
+    def remove(self):
+        self.source_block.edges.remove(self)
+        self.target_block.edges.remove(self)
+    
+    def draw(self, dot: graphviz.Digraph):
+        if self.drawn:
+            return
+
+        self.drawn = True
+        dot.edge(str(id(self.source_block)), str(id(self.target_block)), label=self.label)
+    
 class Block:
     def __init__(self, content, parent = None):
         self.parent = parent
@@ -147,16 +168,30 @@ class Block:
                 if self.content[i][0] == 0:
                     self.children.append(Block(self.content[i:], parent = self))
 
+    # def remove_from_graph(self):
+    #     self.shape = None
+    #     for i in reversed(range(len(self.edges))):
+    #         if self.edges[i]
+
+    def get_end_leaf(self):
+        if len(self.children) == 0:
+            return self
+        else:
+            return self.children[-1].get_end_leaf()
+
     def draw_flow(self):
         if self.graph_func is not None:
             self.graph_func(self)
 
         for child in self.children:
             child.draw_flow()
+    
+    def draw_node(self, dot: graphviz.Digraph):
+        dot.node(str(id(self)), self.first_line, shape=self.shape)
 
-    def draw_graph_nodes(self, dot : graphviz.Digraph):
-        if self.parent is not None:
-            dot.node(str(id(self)), str(id(self)), shape=self.shape)
+    def draw_graph_nodes(self, dot: graphviz.Digraph):
+        if self.parent is not None and self.shape is not None:
+            self.draw_node(dot)
 
         for child in self.children:
             child.draw_graph_nodes(dot)
@@ -164,16 +199,14 @@ class Block:
     def draw_graph_edges(self, dot: graphviz.Digraph):
         if self.parent is not None:
             for edge in self.edges:
-                dot.edge(edge[0], edge[1], edge[2])
+                edge.draw(dot)
         
         for child in self.children:
             child.draw_graph_edges(dot)
     
-    def get_end_leaf(self):
-        if len(self.children) == 0:
-            return self
-        else:
-            return self.children[-1].get_end_leaf()
+    def draw_graph(self, dot: graphviz.Digraph):
+        self.draw_graph_edges(dot)
+        self.draw_graph_nodes(dot)
 
 def num_indentation(line, i):
     # check for tab character
@@ -264,8 +297,7 @@ def main(file_name = __file__):
     
     program_block = Block(lines)
     program_block.draw_flow()
-    program_block.draw_graph_nodes(dot)
-    program_block.draw_graph_edges(dot)
+    program_block.draw_graph(dot)
 
     dot.render('graph', view=True)
 
