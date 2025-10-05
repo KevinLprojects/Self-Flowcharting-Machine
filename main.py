@@ -43,15 +43,15 @@ import graphviz
 
 def generic_flow(block):
     if len(block.children) != 0:
-        block.dot.edge(str(id(block)), str(id(block.children[0])))
+        block.edges.append((str(id(block)), str(id(block.children[0])), ""))
     else:
         if block.parent is not None:
             self_index = block.parent.children.index(block)
             if self_index != len(block.parent.children) - 1:
-                block.dot.edge(str(id(block)), str(id(block.parent.children[self_index + 1])))
+                block.edges.append((str(id(block)), str(id(block.parent.children[self_index + 1])), ""))
 
 def IF_flow(block):
-    block.dot.edge(str(id(block)), str(id(block.children[0])), label="yes")
+    block.edges.append((str(id(block)), str(id(block.children[0])), "yes"))
 
     if block.parent is not None:
         self_index = block.parent.children.index(block)
@@ -59,34 +59,37 @@ def IF_flow(block):
             for i, child in enumerate(block.parent.children[self_index + 1:]):
                 keyword = child.keyword
                 if i == 0:
-                    block.dot.edge(str(id(block)), str(id(child)), label="no")
+                    block.edges.append((str(id(block)), str(id(child)), "no"))
                 if keyword != "elif" and keyword != "else":
-                    block.dot.edge(str(id(block.get_end_leaf())), str(id(child)))
+                    block.edges.append((str(id(block.get_end_leaf())), str(id(child)), ""))
                     break
 
 def ELSE_flow(block):
-    if len(block.children) != 0:
-        block.dot.edge(str(id(block)), str(id(block.children[0])))
+    generic_flow(block)
 
-    edges = get_edges(block.dot, id(block))
-    out_id = None
-    in_edges = []
-    for edge in edges:
-        if edge[0] == id(block):
-            out_id = edge[1]
+# def ELSE_flow(block):
+#     if len(block.children) != 0:
+#         block.dot.edge(str(id(block)), str(id(block.children[0])))
 
-        if edge[1] == id(block):
-            in_edges.append(edge)
+#     edges = get_edges(block.dot, id(block))
+#     out_id = None
+#     in_edges = []
+#     for edge in edges:
+#         if edge[0] == id(block):
+#             out_id = edge[1]
+
+#         if edge[1] == id(block):
+#             in_edges.append(edge)
     
-    for edge in in_edges:
-        block.dot.edge(str(edge[0]), str(out_id), label=edge[2])
+#     for edge in in_edges:
+#         block.dot.edge(str(edge[0]), str(out_id), label=edge[2])
     
-    remove_node(block.dot, id(block))
+#     remove_node(block.dot, id(block))
 
-    if block.parent is not None:
-        self_index = block.parent.children.index(block)
-        if self_index != len(block.parent.children) - 1:
-            block.dot.edge(str(id(block.get_end_leaf())), str(id(block.parent.children[self_index + 1])))
+#     if block.parent is not None:
+#         self_index = block.parent.children.index(block)
+#         if self_index != len(block.parent.children) - 1:
+#             block.dot.edge(str(id(block.get_end_leaf())), str(id(block.parent.children[self_index + 1])))
 
 Keyword_Map = {
     "if": ["diamond", IF_flow],
@@ -103,18 +106,18 @@ Keyword_Map = {
 }
 
 class Block:
-    def __init__(self, content, dot, parent = None):
+    def __init__(self, content, parent = None):
         self.parent = parent
         self.content = []
-        self.dot = dot
-        self.keyword = None
         self.graph_func = None
         self.node = None
         self.first_line = None
-        self.connections = [] #[source object, target object, label]
+        self.keyword = None
+        self.shape = None
+        self.edges = [] #[source object, target object, label]
 
         if parent is not None:
-            self.first_line = content[0][1]
+            self.first_line = repr(content[0][1])[1:-1]
 
             for line in content[1:]:
                 if line[0] == 0:
@@ -127,11 +130,11 @@ class Block:
 
             if keyword in Keyword_Map:
                 self.keyword = keyword
-                self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = Keyword_Map[keyword][0])
+                self.shape = Keyword_Map[keyword][0]
                 self.graph_func = Keyword_Map[keyword][1]
             
             else:
-                self.node = self.dot.node(str(id(self)), repr(self.first_line)[1:-1], shape = "box")
+                self.shape = "box"
                 self.graph_func = generic_flow
         
         else:
@@ -142,14 +145,29 @@ class Block:
         if len(self.content) != 0:
             for i in range(len(self.content)):
                 if self.content[i][0] == 0:
-                    self.children.append(Block(self.content[i:], self.dot, parent = self))
+                    self.children.append(Block(self.content[i:], parent = self))
 
-    def graph(self):
+    def draw_flow(self):
         if self.graph_func is not None:
             self.graph_func(self)
 
         for child in self.children:
-            child.graph()
+            child.draw_flow()
+
+    def draw_graph_nodes(self, dot : graphviz.Digraph):
+        if self.parent is not None:
+            dot.node(str(id(self)), str(id(self)), shape=self.shape)
+
+        for child in self.children:
+            child.draw_graph_nodes(dot)
+    
+    def draw_graph_edges(self, dot: graphviz.Digraph):
+        if self.parent is not None:
+            for edge in self.edges:
+                dot.edge(edge[0], edge[1], edge[2])
+        
+        for child in self.children:
+            child.draw_graph_edges(dot)
     
     def get_end_leaf(self):
         if len(self.children) == 0:
@@ -244,43 +262,12 @@ def main(file_name = __file__):
 
     dot = graphviz.Digraph()
     
-    program_block = Block(lines, dot)
-    program_block.graph()
+    program_block = Block(lines)
+    program_block.draw_flow()
+    program_block.draw_graph_nodes(dot)
+    program_block.draw_graph_edges(dot)
 
     dot.render('graph', view=True)
-
-# graphviz extension (I was trying to extend it but I gave up). graphviz doesn't let you delete nodes or connections :(
-def get_edges(dot: graphviz.Digraph, id):
-    edges = []
-    node = True
-    for line in dot.body:
-        if str(id) in line:
-            if node:
-                node = False
-            else:
-                id2_and_label = line.strip().replace(str(id), "").replace(" -> ", "").split()
-                label = ""
-                if len(id2_and_label) > 1:
-                    label = id2_and_label[1][7:-1]
-
-                if line.strip().index(str(id)) == 0:
-                    edges.append([id, type(id)(id2_and_label[0]), "no"])
-                else:
-                    edges.append([type(id)(id2_and_label[0]), id, "no"])
-    return edges
-
-def remove_edge(dot: graphviz.Digraph, id1, id2):
-    for line in dot.body:
-        if str(id1) + " -> " + str(id2) in line:
-            dot.body.remove(line)
-            return
-
-def remove_node(dot: graphviz.Digraph, id):
-    for line in dot.body:
-        print(id, "   ", line)
-        if str(id) in str(line):
-            print("remove")
-            dot.body.remove(line)
 
 if __name__ == "__main__":
     # check for file name arg
