@@ -27,8 +27,10 @@ Subclasses will have arrows pointing to the parent class
 # improve layout of the chart (entry point -> Classes(methods) -> generic functions)
 # maybe use seq2seq transformer to put node labels in plane english?
 
+
 import sys
 import graphviz
+
 
 def generic_flow(block):
     # connect block to the first block inside its indentation (if it causes an indentation)
@@ -40,22 +42,31 @@ def generic_flow(block):
         if block.sibling_index() != -1:
             Edge(block, block.parent.children[block.sibling_index() + 1])
 
+
+# finds all nodes that result in control flow leaving the current block (leaf nodes) and connects them to a given target node
 def connect_loose_leaves(source_block, target_block):
     for child in source_block.children:
+        # if a child is a conditional with no false output connection, it is a loose leaf
         if (child.shape == 'diamond') and child.parent.children.index(child) == len(child.parent.children) - 1:
             Edge(child, target_block, label='no', weight='0.75')
+        
+        # if a child has no children and no outgoing edges (it is the lowest line of code in the block) it is a loose leaf
         if len(child.children) == 0 and child.count_edges()[1] == 0:
             Edge(child, target_block, weight='0.75')
 
+        # recursivly identify leaves
         connect_loose_leaves(child, target_block)
+
 
 def conditional_flow(block, IF=True):
     # connect the block to its child (the statement exicuted when the condition is True)
     Edge(block, block.children[0], label="yes")
+
     # if the block has siblings lower than it, then figure out how to connect them
     if block.sibling_index() != -1:
         for i, child in enumerate(block.parent.children[block.sibling_index() + 1:]):
             keyword = child.keyword
+
             # connect the first lower sibling (the statement exictuted when the condition is False)
             if i == 0:
                 Edge(block, child, label="no")
@@ -64,6 +75,7 @@ def conditional_flow(block, IF=True):
             if  keyword != "else" and (IF == True and keyword != "elif"):
                 connect_loose_leaves(block, child)
                 break
+
 
 def else_flow(block):
     # connect all incoming connections to the child (the statement exicuted inside the else)
@@ -77,10 +89,13 @@ def else_flow(block):
     if block.sibling_index() != -1:
         connect_loose_leaves(block, block.parent.children[block.sibling_index() + 1])
 
+
 def loop_flow(block):
+    # connect loop statement to the code being looped
     if len(block.children) != 0:
         Edge(block, block.children[0], label='yes')
     
+    # connect loose leaves from the block back to the loop conditional statement
     connect_loose_leaves(block, block)
 
     # if the block has siblings lower than it, then figure out how to connect them
@@ -90,8 +105,10 @@ def loop_flow(block):
             if i == 0:
                 Edge(block, child, label="no")
 
+
 def try_flow(block):
     generic_flow(block)
+
 
 # map between python keywords and their node shapes and control flows
 Keyword_Map = {
@@ -108,17 +125,18 @@ Keyword_Map = {
     "class": ["box", generic_flow]
 }
 
-class Edge:
-    def __init__(self, source_block, target_block, label="", constraint='true', weight='1.0', color='black', style=None):
-        self.source_block = source_block
-        self.target_block = target_block
-        self.label=label
-        self.constraint = constraint
-        self.weight = weight
-        self.color = color
-        self.style = style
-        self.drawn = False
 
+class Edge:
+    def __init__(self, source_block, target_block, label="", weight='1.0', color='black', style=None):
+        self.source_block = source_block # source of edge
+        self.target_block = target_block # target of edge
+        self.label = label # label of edge
+        self.weight = weight # graphviz param controlling edge straightness and length
+        self.color = color # color of edge line
+        self.style = style # can be dotted or dashed (None is plain line)
+        self.drawn = False # has line already been drawn
+
+        # edges to a try block go to its immediate child and resulting connections from child to self are "hidden"
         if self.source_block.keyword == 'try':
             self.source_block = self.source_block.children[0]
         if self.target_block.keyword == 'try':
@@ -127,6 +145,7 @@ class Edge:
         if self.source_block == self.target_block:
             self.drawn = True
 
+        # add the edge to the block edge lists
         source_block.edges.append(self)
         target_block.edges.append(self)
     
@@ -136,6 +155,7 @@ class Edge:
             return True
         return False
 
+    # hides the edge by implying that it has already been drawn
     def hide(self):
         self.drawn = True
     
@@ -145,31 +165,34 @@ class Edge:
             return
         self.drawn = True
         # add to the graphviz Digraph
-        dot.edge(str(id(self.source_block)), str(id(self.target_block)), headlabel=self.label, constraint=self.constraint, weight=self.weight, color=self.color, style=self.style, labeldistance='3')
+        dot.edge(str(id(self.source_block)), str(id(self.target_block)), headlabel=self.label, weight=self.weight, color=self.color, style=self.style, labeldistance='3')
     
+
 class Block:
     def __init__(self, content, parent = None):
-        self.parent = parent
-        self.content = []
-        self.graph_func = None
-        self.node = None
-        self.first_line = None
-        self.keyword = None
-        self.shape = None
-        self.edges = [] #[source object, target object, label]
+        self.parent = parent # node that created the current object (if there is one)
+        self.content = [] # all the lines in under the indent (if there is one) and the line causing the indent
+        self.graph_func = None # function used to connect blocks to self
+        self.first_line = None # first line of context without end of line comments
+        self.keyword = None # key term causing indentation
+        self.shape = None # graphviz shape keyword
+        self.edges = [] # [source object, target object, label]
 
         if parent is not None:
             self.first_line = repr(remove_comment(content[0][1]))[1:-1]
 
+            # append only lines under the indent (if there is one)
             for line in content[1:]:
                 if line[0] == 0:
                     break
                 self.content.append([line[0] - 1, line[1]])
-
+            
+            # first word in the first line minus : (if there is a :)
             keyword = self.first_line.split()[0]
             if keyword[-1] == ":":
                 keyword = keyword[0:-1]
 
+            # assign shape and control flow function based on keyword dictionary
             if keyword in Keyword_Map:
                 self.keyword = keyword
                 self.shape = Keyword_Map[keyword][0]
@@ -177,6 +200,7 @@ class Block:
             else:
                 self.shape = "box"
                 self.graph_func = generic_flow
+
         else:
             self.content = content
 
@@ -212,6 +236,7 @@ class Block:
                 out_count += 1
             else:
                 in_count += 1
+
         return (in_count, out_count)
 
     # gets the end line inside the current block
@@ -232,7 +257,8 @@ class Block:
     # creates a graphviz node for the current block
     def draw_node(self, dot):
         dot.node(str(id(self)), self.first_line, shape=self.shape)
-
+    
+    # recursively draws nodes to graphviz graph
     def draw_graph_nodes(self, dot):
         if self.keyword == 'try':
             self.draw_subgraph_nodes(dot)
@@ -244,6 +270,7 @@ class Block:
         for child in self.children:
             child.draw_graph_nodes(dot)
     
+    # recursively draws nodes to a graphviz subgraph inside context manager
     def draw_subgraph_nodes(self, dot):
         with dot.subgraph(name=str(id(self))) as c:
             c.attr(label="try block", style="dashed", cluster='true')
@@ -264,6 +291,7 @@ class Block:
         self.draw_graph_nodes(dot)
         self.draw_graph_edges(dot)
         
+
 def num_indentation(line, i):
     # check for tab character
     if line[0] == '\t':
@@ -274,7 +302,9 @@ def num_indentation(line, i):
                 count += 1
             else:
                 break
+
         return count
+    
     else:
         # number of indentations
         num_intdent = (len(line) - len(line.strip())) / 4
@@ -283,6 +313,7 @@ def num_indentation(line, i):
             raise IndentationError(f"Bro. {num_intdent * 4} spaces? What is wrong with you?")
         
         return int((len(line) - len(line.strip())) / 4)
+
 
 # removes blank and commented out lines
 def remove_lines(lines):
@@ -310,14 +341,18 @@ def remove_lines(lines):
             lines.pop(i)
             continue
         
+        # lines are lists of indentation ammount and the parsed line
         lines[i] = [num_indentation(line, i + 1), line.strip()]
+
 
 # removes comments from the end of a line
 def remove_comment(line):
     index = line.find("#")
     if index != -1:
         return(line[0:index].strip())
+    
     return line
+
 
 # combines lines that are part of the same statement
 def merge_lines(lines):
@@ -343,6 +378,7 @@ def merge_lines(lines):
             if last_state == True:
                 lines[i][1] += '\n' + combined_lines
                 combined_lines = ""
+
             last_state = False
 
 
@@ -375,6 +411,7 @@ def main(file_name = __file__):
 
     # create graph pdf, dot file, and open pdf
     dot.render('graph', view=True)
+
 
 if __name__ == "__main__":
     # check for file name arg
