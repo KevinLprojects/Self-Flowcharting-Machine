@@ -37,17 +37,15 @@ def generic_flow(block):
 
     else:
         # if the block has a sibling lower than it, then connect the two
-        if block.parent is not None:
-            self_index = block.parent.children.index(block)
-            if self_index != len(block.parent.children) - 1:
-                Edge(block, block.parent.children[self_index + 1])
+        if block.sibling_index() != -1:
+            Edge(block, block.parent.children[block.sibling_index() + 1])
 
 def connect_loose_leaves(source_block, target_block):
     for child in source_block.children:
         if (child.shape == 'diamond') and child.parent.children.index(child) == len(child.parent.children) - 1:
-            Edge(child, target_block, weight='0.5', label='no')
+            Edge(child, target_block, label='no', weight='0.75')
         if len(child.children) == 0 and child.count_edges()[1] == 0:
-            Edge(child, target_block, weight='0.5')
+            Edge(child, target_block, weight='0.75')
 
         connect_loose_leaves(child, target_block)
 
@@ -55,19 +53,17 @@ def conditional_flow(block, IF=True):
     # connect the block to its child (the statement exicuted when the condition is True)
     Edge(block, block.children[0], label="yes")
     # if the block has siblings lower than it, then figure out how to connect them
-    if block.parent is not None:
-        self_index = block.parent.children.index(block)
-        if self_index != len(block.parent.children) - 1:
-            for i, child in enumerate(block.parent.children[self_index + 1:]):
-                keyword = child.keyword
-                # connect the first lower sibling (the statement exictuted when the condition is False)
-                if i == 0:
-                    Edge(block, child, label="no", weight='0.5')
+    if block.sibling_index() != -1:
+        for i, child in enumerate(block.parent.children[block.sibling_index() + 1:]):
+            keyword = child.keyword
+            # connect the first lower sibling (the statement exictuted when the condition is False)
+            if i == 0:
+                Edge(block, child, label="no")
 
-                # connect the last node in the if's inside stantement (exicuted when the condition is True) to the first non elif/else block
-                if  keyword != "else" and (IF == True and keyword != "elif"):
-                    Edge(block.get_end_leaf(), child)
-                    break
+            # connect the leaf nodes in the if's inside stantement (exicuted when the condition is True) to the first non elif/else block
+            if  keyword != "else" and (IF == True and keyword != "elif"):
+                connect_loose_leaves(block, child)
+                break
 
 def else_flow(block):
     # connect all incoming connections to the child (the statement exicuted inside the else)
@@ -77,11 +73,9 @@ def else_flow(block):
     # prevent the else block from being displayed
     block.hide()
 
-    # if the block has a sibling lower than it, then connect the last block on the inside of the else statement to it
-    if block.parent is not None:
-        self_index = block.parent.children.index(block)
-        if self_index != len(block.parent.children) - 1:
-            Edge(block.get_end_leaf(), block.parent.children[self_index + 1], constraint='true', weight='0.5')
+    # if the block has a sibling lower than it, then connect the leaf blocks on the inside of the else statement to it
+    if block.sibling_index() != -1:
+        connect_loose_leaves(block, block.parent.children[block.sibling_index() + 1])
 
 def loop_flow(block):
     if len(block.children) != 0:
@@ -90,13 +84,11 @@ def loop_flow(block):
     connect_loose_leaves(block, block)
 
     # if the block has siblings lower than it, then figure out how to connect them
-    if block.parent is not None:
-        self_index = block.parent.children.index(block)
-        if self_index != len(block.parent.children) - 1:
-            for i, child in enumerate(block.parent.children[self_index + 1:]):
-                # connect the first lower sibling (the statement exictuted when the condition is False)
-                if i == 0:
-                    Edge(block, child, label="no")
+    if block.sibling_index() != -1:
+        for i, child in enumerate(block.parent.children[block.sibling_index() + 1:]):
+            # connect the first lower sibling (the statement exictuted when the condition is False)
+            if i == 0:
+                Edge(block, child, label="no")
 
 def try_flow(block):
     generic_flow(block)
@@ -195,6 +187,15 @@ class Block:
             for i in range(len(self.content)):
                 if self.content[i][0] == 0:
                     self.children.append(Block(self.content[i:], parent = self))
+    
+    # return index in parents list of children, or -1 if no parent or self is last sibling
+    def sibling_index(self):
+        if self.parent is not None:
+            self_index = self.parent.children.index(self)
+            if self_index != len(self.parent.children) - 1:
+                return self_index
+                
+        return -1
 
     # prevents the node and its edges from being displayed
     def hide(self):
@@ -367,7 +368,7 @@ def main(file_name = __file__):
 
     # initialize graph
     dot = graphviz.Digraph()
-    dot.attr('graph', ranksep='1.0', nodesep='1.0', compound='true')
+    dot.attr('graph', ranksep='1.0', nodesep='1.0', compound='true', newrank='true', packMode='graph', splines='ortho')
 
     # draw graph from block tree
     program_block.draw_graph(dot)
@@ -380,4 +381,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(sys.argv[1])
     else:
-        main("test.py")
+        main()
