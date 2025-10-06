@@ -134,12 +134,15 @@ class Edge:
         self.weight = weight # graphviz param controlling edge straightness and length
         self.color = color # color of edge line
         self.style = style # can be dotted or dashed (None is plain line)
+        self.lhead = None
         self.drawn = False # has line already been drawn
 
         # edges to a try block go to its immediate child and resulting connections from child to self are "hidden"
         if self.source_block.keyword == 'try':
+            self.lhead = str(id(self.source_block))
             self.source_block = self.source_block.children[0]
         if self.target_block.keyword == 'try':
+            self.lhead = str(id(self.target_block))
             self.target_block = self.target_block.children[0]
         
         if self.source_block == self.target_block:
@@ -165,7 +168,7 @@ class Edge:
             return
         self.drawn = True
         # add to the graphviz Digraph
-        dot.edge(str(id(self.source_block)), str(id(self.target_block)), taillabel=self.label, weight=self.weight, color=self.color, style=self.style, labeldistance='3')
+        dot.edge(str(id(self.source_block)), str(id(self.target_block)), taillabel=self.label, weight=self.weight, color=self.color, style=self.style, labeldistance='3', lhead=self.lhead)
     
 
 class Block:
@@ -404,7 +407,7 @@ def main(file_name = __file__):
 
     # initialize graph
     dot = graphviz.Digraph()
-    dot.attr('graph', ranksep='1.0', nodesep='1.0', compound='true', newrank='true', packMode='graph')
+    dot.attr('graph', ranksep='1.0', nodesep='1.0', compound='true', newrank='true', packMode='graph', splines='ortho')
 
     # draw graph from block tree
     program_block.draw_graph(dot)
