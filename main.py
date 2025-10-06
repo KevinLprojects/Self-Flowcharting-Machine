@@ -39,25 +39,25 @@ from flow_functions import *
 
 # map between python keywords and their node shapes and control flows
 Keyword_Map = {
-    "if": ["diamond", conditional_flow],
-    "elif": ["diamond", conditional_flow],
-    "else": ["box", else_flow],
-    "for": ["diamond", loop_flow],
-    "while": ["diamond", loop_flow],
-    "try": ["box", try_flow],
-    "except": ["box", generic_flow],
-    "finally": ["box", generic_flow],
-    "with": ["box", generic_flow],
-    "def": ["box", generic_flow],
-    "class": ["box", generic_flow],
-    "other": ["box", generic_flow]
+    'if': ['diamond', conditional_flow],
+    'elif': ['diamond', conditional_flow],
+    'else': ['box', else_flow],
+    'for': ['diamond', loop_flow],
+    'while': ['diamond', loop_flow],
+    'try': ['box', try_flow],
+    'except': ['box', generic_flow],
+    'finally': ['box', generic_flow],
+    'with': ['box', generic_flow],
+    'def': ['box', generic_flow],
+    'class': ['box', generic_flow],
+    'other': ['box', generic_flow]
 }
 
 
 def main(file_name = __file__):
     # open the except if the file can't be opened
     try:
-        with open(file_name, "r") as f:
+        with open(file_name, 'r') as f:
             lines = f.readlines()
 
     # print the error caught
@@ -85,9 +85,9 @@ def main(file_name = __file__):
     dot.render('graph', view=True)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # check for file name arg
     if len(sys.argv) > 1:
         main(sys.argv[1])
     else:
-        main("test_file.py")
+        main('test_file.py')

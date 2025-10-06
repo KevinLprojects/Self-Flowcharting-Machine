@@ -53,7 +53,7 @@ def remove_lines(lines):
 
 # removes comments from the end of a line
 def remove_comment(line):
-    index = line.find("#")
+    index = line.find('#')
     if index != -1:
         return(line[0:index].strip())
     
@@ -66,13 +66,13 @@ def merge_lines(lines):
     open_square = 0
     open_curly = 0
     last_state = False
-    combined_lines = ""
+    combined_lines = ''
 
     for i in reversed(range(len(lines))):
         # count open brackets
-        open_parentheses += lines[i][1].count(")") - lines[i][1].count("(")
-        open_square += lines[i][1].count("]") - lines[i][1].count("[")
-        open_curly += lines[i][1].count("}") - lines[i][1].count("{")
+        open_parentheses += lines[i][1].count(')') - lines[i][1].count('(')
+        open_square += lines[i][1].count(']') - lines[i][1].count('[')
+        open_curly += lines[i][1].count('}') - lines[i][1].count('{')
 
         # if current line is part of a multiline statement, add it to combined_lines and remove the line
         if open_parentheses + open_square + open_curly > 0:
@@ -83,6 +83,6 @@ def merge_lines(lines):
             # if the last line was in a multiline, and the current line is not, then add the combined lines to the current line
             if last_state == True:
                 lines[i][1] += '\n' + combined_lines
-                combined_lines = ""
+                combined_lines = ''
 
             last_state = False

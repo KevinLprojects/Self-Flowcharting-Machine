@@ -29,19 +29,19 @@ def connect_loose_leaves(source_block, target_block):
 
 def conditional_flow(block, IF=True):
     # connect the block to its child (the statement exicuted when the condition is True)
-    Edge(block, block.children[0], label="yes")
+    Edge(block, block.children[0], label='yes')
 
     # if the block has siblings lower than it, then figure out how to connect them
     if block.sibling_index() != -1:
-        for i, child in enumerate(block.parent.children[block.sibling_index() + 1:]):
+        # connect the first lower sibling (the statement exicututed when the condition is False)
+        Edge(block, block.parent.children[block.sibling_index() + 1], label='no')
+
+        # loop through the rest of the siblings
+        for child in block.parent.children[block.sibling_index() + 2:]:
             keyword = child.keyword
 
-            # connect the first lower sibling (the statement exictuted when the condition is False)
-            if i == 0:
-                Edge(block, child, label="no")
-
             # connect the leaf nodes in the if's inside stantement (exicuted when the condition is True) to the first non elif/else block
-            if  keyword != "else" and (IF == True and keyword != "elif"):
+            if  keyword not in ['else', 'elif']:
                 connect_loose_leaves(block, child)
                 break
 
@@ -72,8 +72,23 @@ def loop_flow(block):
         for i, child in enumerate(block.parent.children[block.sibling_index() + 1:]):
             # connect the first lower sibling (the statement exictuted when the condition is False)
             if i == 0:
-                Edge(block, child, label="no")
+                Edge(block, child, label='no')
 
 
 def try_flow(block):
-    generic_flow(block)
+    # connect the block to its child (the statement exicuted when the condition is True)
+    Edge(block, block.children[0], label='yes')
+
+    # if the block has siblings lower than it, then figure out how to connect them
+    if block.sibling_index() != -1:
+        for child in block.parent.children[block.sibling_index() + 1:]:
+            keyword = child.keyword
+
+            # if the sibling is an except, then connect it with a special error connection
+            if keyword == 'except':
+                Edge(block, child, label=child.first_line.split()[1], weight='0.75', color='red', style='dashed')
+
+            # connect the leaf nodes in the try's inside stantement (exicuted when the condition is True) to the first non except block
+            else:
+                connect_loose_leaves(block, child)
+                break
