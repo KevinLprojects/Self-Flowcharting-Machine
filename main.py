@@ -404,7 +404,7 @@ def main(file_name = __file__):
 
     # initialize graph
     dot = graphviz.Digraph()
-    dot.attr('graph', ranksep='1.0', nodesep='1.0', compound='true', newrank='true', packMode='graph', splines='ortho')
+    dot.attr('graph', ranksep='1.0', nodesep='1.0', compound='true', newrank='true', packMode='graph')
 
     # draw graph from block tree
     program_block.draw_graph(dot)
