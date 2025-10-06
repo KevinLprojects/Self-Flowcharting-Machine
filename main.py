@@ -96,19 +96,20 @@ def else_flow(block):
         if self_index != len(block.parent.children) - 1:
             Edge(block.get_end_leaf(), block.parent.children[self_index + 1], constraint='true', weight='0.5')
 
+def connect_loose_leaves(source_block, target_block):
+    for child in source_block.children:
+        if (child.shape == 'diamond') and child.parent.children.index(child) == len(child.parent.children) - 1:
+            Edge(child, target_block, weight='0.25', label='no')
+        if len(child.children) == 0 and child.count_edges()[1] == 0:
+            Edge(child, target_block, weight='0.25')
+
+        connect_loose_leaves(child, target_block)
+
 def loop_flow(block):
     if len(block.children) != 0:
         Edge(block, block.children[0], label='yes')
-    def graph_leaves(_block):
-        for child in _block.children:
-            if (child.keyword in Keyword_Map and not child.keyword == 'else') and child.parent.children.index(child) == len(child.parent.children) - 1:
-                Edge(child, block, weight='0.25', label='no')
-            if len(child.children) == 0 and child.count_edges()[1] == 0:
-                Edge(child, block, weight='0.25')
-
-            graph_leaves(child)
     
-    graph_leaves(block)
+    connect_loose_leaves(block, block)
 
     # if the block has siblings lower than it, then figure out how to connect them
     if block.parent is not None:
