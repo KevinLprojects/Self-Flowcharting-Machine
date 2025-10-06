@@ -27,28 +27,6 @@ Subclasses will have arrows pointing to the parent class
 # improve layout of the chart (entry point -> Classes(methods) -> generic functions)
 # maybe use seq2seq transformer to put node labels in plane english?
 
-def loop_test():
-    try:
-        while True:
-            if True:
-                for i in range(10):
-                    pass
-                else:
-                    pass
-            elif True:
-                while True:
-                    pass
-            else:
-                pass
-        pass
-    except Exception as e:
-        print("2")
-    else:
-        print("3")
-    finally:
-        print("4")
-    print("5")
-
 import sys
 import graphviz
 
@@ -63,6 +41,15 @@ def generic_flow(block):
             self_index = block.parent.children.index(block)
             if self_index != len(block.parent.children) - 1:
                 Edge(block, block.parent.children[self_index + 1])
+
+def connect_loose_leaves(source_block, target_block):
+    for child in source_block.children:
+        if (child.shape == 'diamond') and child.parent.children.index(child) == len(child.parent.children) - 1:
+            Edge(child, target_block, weight='0.5', label='no')
+        if len(child.children) == 0 and child.count_edges()[1] == 0:
+            Edge(child, target_block, weight='0.5')
+
+        connect_loose_leaves(child, target_block)
 
 def conditional_flow(block, IF=True):
     # connect the block to its child (the statement exicuted when the condition is True)
@@ -95,15 +82,6 @@ def else_flow(block):
         self_index = block.parent.children.index(block)
         if self_index != len(block.parent.children) - 1:
             Edge(block.get_end_leaf(), block.parent.children[self_index + 1], constraint='true', weight='0.5')
-
-def connect_loose_leaves(source_block, target_block):
-    for child in source_block.children:
-        if (child.shape == 'diamond') and child.parent.children.index(child) == len(child.parent.children) - 1:
-            Edge(child, target_block, weight='0.25', label='no')
-        if len(child.children) == 0 and child.count_edges()[1] == 0:
-            Edge(child, target_block, weight='0.25')
-
-        connect_loose_leaves(child, target_block)
 
 def loop_flow(block):
     if len(block.children) != 0:
@@ -402,4 +380,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(sys.argv[1])
     else:
-        main()
+        main("test.py")
