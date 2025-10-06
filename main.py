@@ -145,7 +145,7 @@ class Edge:
             return
         self.drawn = True
         # add to the graphviz Digraph
-        dot.edge(str(id(self.source_block)), str(id(self.target_block)), label=self.label, constraint=self.constraint, weight=self.weight, color=self.color, style=self.style)
+        dot.edge(str(id(self.source_block)), str(id(self.target_block)), headlabel=self.label, constraint=self.constraint, weight=self.weight, color=self.color, style=self.style, labeldistance='3')
     
 class Block:
     def __init__(self, content, parent = None):
