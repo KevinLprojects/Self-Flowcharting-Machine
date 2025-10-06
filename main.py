@@ -165,7 +165,7 @@ class Edge:
             return
         self.drawn = True
         # add to the graphviz Digraph
-        dot.edge(str(id(self.source_block)), str(id(self.target_block)), headlabel=self.label, weight=self.weight, color=self.color, style=self.style, labeldistance='3')
+        dot.edge(str(id(self.source_block)), str(id(self.target_block)), taillabel=self.label, weight=self.weight, color=self.color, style=self.style, labeldistance='3')
     
 
 class Block:
