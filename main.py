@@ -45,7 +45,7 @@ def main(file_name = __file__):
 
     # parse the text
     parse(lines)
-    
+
     # create blocks
     program_block = Block(lines, Keyword_Map)
 

@@ -10,14 +10,14 @@ def num_indentation(line):
                 break
 
         return count
-    
+
     else:
         # number of indentations
         num_intdent = (len(line) - len(line.strip())) / 4
         # if the user is a 
         if not num_intdent.is_integer():
             raise IndentationError(f"Bro. {num_intdent * 4} spaces? What is wrong with you?")
-        
+
         return int((len(line) - len(line.strip())) / 4)
 
 
@@ -41,12 +41,12 @@ def remove_lines(lines):
         # if multiline comment starts, then set open_multiline to True
         if (line.strip().startswith("\"\"\"") or line.strip().startswith("\'\'\'")) and open_multiline is False:
             open_multiline = True
-        
+
         # remove comments and empty lines
         if open_multiline or len(line) == 0 or line.strip()[0] == '#':
             lines.pop(i)
             continue
-        
+
         # lines are lists of indentation ammount and the parsed line
         lines[i] = [num_indentation(line), line.strip()]
 
@@ -56,7 +56,7 @@ def remove_comment(line):
     index = line.find('#')
     if index != -1:
         return(line[0:index].strip())
-    
+
     return line
 
 

@@ -1,28 +1,32 @@
 from parse_text_functions import remove_comment
 
 class Edge:
-    def __init__(self, source_block, target_block, label='', weight='1.0', color='black', style=None):
+    def __init__(self, source_block, target_block, **graphviz_edge_kwargs):
         self.source_block = source_block # source of edge
         self.target_block = target_block # target of edge
-        self.label = label # label of edge
-        self.headlabel = None # label of the head
-        self.weight = weight # graphviz param controlling edge straightness and length
-        self.color = color # color of edge line
-        self.style = style # can be dotted or dashed (None is plain line)
-        self.lhead = None
-        self.ltail = None
+        self.graphviz_edge_kwargs = graphviz_edge_kwargs
         self.drawn = False # has line already been drawn
+
+        if 'label' in graphviz_edge_kwargs:
+            self.label = graphviz_edge_kwargs['label']
+        else:
+            self.label = ''
+   
+        self.graphviz_edge_kwargs['taillabel'] = self.label
+        graphviz_edge_kwargs['label'] = None
+
+        self.graphviz_edge_kwargs['labeldistance'] = '3'
 
         # edges to a try block go to its immediate child and resulting connections from child to self are "hidden"
         if self.source_block.keyword == 'try':
-            self.ltail = str(id(self.source_block))
-            self.headlabel = self.label
-            self.label = None
+            self.graphviz_edge_kwargs['ltail'] = str(id(self.source_block))
+            self.graphviz_edge_kwargs['headlabel'] = self.graphviz_edge_kwargs['taillabel']
+            self.graphviz_edge_kwargs['taillabel'] = None
             self.source_block = self.source_block.children[0]
         if self.target_block.keyword == 'try':
-            self.lhead = str(id(self.target_block))
-            self.headlabel = self.label
-            self.label = None
+            self.graphviz_edge_kwargs['lhead'] = str(id(self.target_block))
+            self.graphviz_edge_kwargs['headlabel'] = self.graphviz_edge_kwargs['taillabel']
+            self.graphviz_edge_kwargs['taillabel'] = None
             self.target_block = self.target_block.children[0]
         
         if self.source_block == self.target_block:
@@ -48,7 +52,8 @@ class Edge:
             return
         self.drawn = True
         # add to the graphviz Digraph
-        dot.edge(str(id(self.source_block)), str(id(self.target_block)), taillabel=self.label, headlabel=self.headlabel, weight=self.weight, color=self.color, style=self.style, labeldistance='3', lhead=self.lhead, ltail=self.ltail)
+        print(self.graphviz_edge_kwargs)
+        dot.edge(str(id(self.source_block)), str(id(self.target_block)), **self.graphviz_edge_kwargs)
     
 
 class Block:
