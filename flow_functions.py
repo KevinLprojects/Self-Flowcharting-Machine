@@ -1,4 +1,4 @@
-from graph_classes import Block, Edge
+from graph_classes import Edge
 
 
 def generic_flow(block):
@@ -20,14 +20,14 @@ def connect_loose_leaves(source_block, target_block):
             Edge(child, target_block, label='no', weight='0.75')
         
         # if a child has no children and no outgoing edges (it is the lowest line of code in the block) it is a loose leaf
-        if len(child.children) == 0 and child.count_edges()[1] == 0:
+        if (len(child.children) == 0 and child.count_edges()[1] == 0):
             Edge(child, target_block, weight='0.75')
 
         # recursivly identify leaves
         connect_loose_leaves(child, target_block)
 
 
-def conditional_flow(block, IF=True):
+def conditional_flow(block):
     # connect the block to its child (the statement exicuted when the condition is True)
     Edge(block, block.children[0], label='yes')
 

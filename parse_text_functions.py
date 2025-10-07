@@ -1,4 +1,4 @@
-def num_indentation(line, i):
+def num_indentation(line):
     # check for tab character
     if line[0] == '\t':
         count = 0
@@ -33,13 +33,13 @@ def remove_lines(lines):
         line = lines[i]
 
         # if multiline comment ends, set open_multiline to false, and remove the line
-        if (line.strip().startswith("\"\"\"") or line.strip().startswith("\'\'\'")) and open_multiline == True:
+        if (line.strip().startswith("\"\"\"") or line.strip().startswith("\'\'\'")) and open_multiline is True:
             open_multiline = False
             lines.pop(i)
             continue
 
         # if multiline comment starts, then set open_multiline to True
-        elif (line.strip().startswith("\"\"\"") or line.strip().startswith("\'\'\'")) and open_multiline == False:
+        if (line.strip().startswith("\"\"\"") or line.strip().startswith("\'\'\'")) and open_multiline is False:
             open_multiline = True
         
         # remove comments and empty lines
@@ -48,7 +48,7 @@ def remove_lines(lines):
             continue
         
         # lines are lists of indentation ammount and the parsed line
-        lines[i] = [num_indentation(line, i + 1), line.strip()]
+        lines[i] = [num_indentation(line), line.strip()]
 
 
 # removes comments from the end of a line
@@ -81,8 +81,12 @@ def merge_lines(lines):
             last_state = True
         else:
             # if the last line was in a multiline, and the current line is not, then add the combined lines to the current line
-            if last_state == True:
+            if last_state is True:
                 lines[i][1] += '\n' + combined_lines
                 combined_lines = ''
 
             last_state = False
+
+def parse(lines):
+    remove_lines(lines)
+    merge_lines(lines)

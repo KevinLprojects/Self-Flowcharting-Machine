@@ -1,4 +1,4 @@
-from parse_text_functions import *
+from parse_text_functions import remove_comment
 
 class Edge:
     def __init__(self, source_block, target_block, label='', weight='1.0', color='black', style=None):
@@ -52,7 +52,7 @@ class Edge:
     
 
 class Block:
-    def __init__(self, content, Keyword_Map, parent = None):
+    def __init__(self, content, keyword_map, parent = None):
         self.parent = parent # node that created the current object (if there is one)
         self.content = [] # all the lines in under the indent (if there is one) and the line causing the indent
         self.graph_func = None # function used to connect blocks to self
@@ -74,13 +74,13 @@ class Block:
             keyword = self.first_line.split()[0].replace(':', '')
 
             # assign shape and control flow function based on keyword dictionary
-            if keyword in Keyword_Map:
+            if keyword in keyword_map:
                 self.keyword = keyword
-                self.shape = Keyword_Map[keyword][0]
-                self.graph_func = Keyword_Map[keyword][1]
+                self.shape = keyword_map[keyword][0]
+                self.graph_func = keyword_map[keyword][1]
             else:
                 self.shape = 'box'
-                self.graph_func = Keyword_Map['other'][1]
+                self.graph_func = keyword_map['other'][1]
 
         else:
             self.content = content
@@ -89,9 +89,9 @@ class Block:
 
         # recursively adds nodes until reaching lines with no indented children
         if len(self.content) != 0:
-            for i in range(len(self.content)):
-                if self.content[i][0] == 0:
-                    self.children.append(Block(self.content[i:], Keyword_Map, parent = self))
+            for i, line in enumerate(self.content):
+                if line[0] == 0:
+                    self.children.append(Block(self.content[i:], keyword_map, parent = self))
     
     # return index in parents list of children, or -1 if no parent or self is last sibling
     def sibling_index(self):
