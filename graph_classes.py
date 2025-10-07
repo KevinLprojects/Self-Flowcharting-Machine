@@ -7,26 +7,23 @@ class Edge:
         self.graphviz_edge_kwargs = graphviz_edge_kwargs
         self.drawn = False # has line already been drawn
 
-        if 'label' in graphviz_edge_kwargs:
+        self.graphviz_edge_kwargs['labeldistance'] = '3'
+
+        if 'headlabel' in graphviz_edge_kwargs:
+            self.label = graphviz_edge_kwargs['headlabel']
+        elif 'taillabel' in graphviz_edge_kwargs:
+            self.label = graphviz_edge_kwargs['taillabel']
+        elif 'label' in graphviz_edge_kwargs:
             self.label = graphviz_edge_kwargs['label']
         else:
             self.label = ''
-   
-        self.graphviz_edge_kwargs['taillabel'] = self.label
-        graphviz_edge_kwargs['label'] = None
-
-        self.graphviz_edge_kwargs['labeldistance'] = '3'
 
         # edges to a try block go to its immediate child and resulting connections from child to self are "hidden"
         if self.source_block.keyword == 'try':
             self.graphviz_edge_kwargs['ltail'] = str(id(self.source_block))
-            self.graphviz_edge_kwargs['headlabel'] = self.graphviz_edge_kwargs['taillabel']
-            self.graphviz_edge_kwargs['taillabel'] = None
             self.source_block = self.source_block.children[0]
         if self.target_block.keyword == 'try':
             self.graphviz_edge_kwargs['lhead'] = str(id(self.target_block))
-            self.graphviz_edge_kwargs['headlabel'] = self.graphviz_edge_kwargs['taillabel']
-            self.graphviz_edge_kwargs['taillabel'] = None
             self.target_block = self.target_block.children[0]
         
         if self.source_block == self.target_block:
@@ -52,7 +49,6 @@ class Edge:
             return
         self.drawn = True
         # add to the graphviz Digraph
-        print(self.graphviz_edge_kwargs)
         dot.edge(str(id(self.source_block)), str(id(self.target_block)), **self.graphviz_edge_kwargs)
     
 
@@ -60,6 +56,7 @@ class Block:
     def __init__(self, content, keyword_map, parent = None):
         self.parent = parent # node that created the current object (if there is one)
         self.content = [] # all the lines in under the indent (if there is one) and the line causing the indent
+        self.keyword_map = keyword_map
         self.graph_func = None # function used to connect blocks to self
         self.first_line = None # first line of context without end of line comments
         self.keyword = None # key term causing indentation
@@ -79,13 +76,13 @@ class Block:
             keyword = self.first_line.split()[0].replace(':', '')
 
             # assign shape and control flow function based on keyword dictionary
-            if keyword in keyword_map:
+            if keyword in self.keyword_map:
                 self.keyword = keyword
-                self.shape = keyword_map[keyword][0]
-                self.graph_func = keyword_map[keyword][1]
+                self.shape = self.keyword_map[keyword][0]
+                self.graph_func = self.keyword_map[keyword][1]
             else:
                 self.shape = 'box'
-                self.graph_func = keyword_map['other'][1]
+                self.graph_func = self.keyword_map['other'][1]
 
         else:
             self.content = content
@@ -96,7 +93,7 @@ class Block:
         if len(self.content) != 0:
             for i, line in enumerate(self.content):
                 if line[0] == 0:
-                    self.children.append(Block(self.content[i:], keyword_map, parent = self))
+                    self.children.append(Block(self.content[i:], self.keyword_map, parent = self))
     
     # return index in parents list of children, or -1 if no parent or self is last sibling
     def sibling_index(self):

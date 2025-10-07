@@ -19,25 +19,24 @@ import graphviz
 
 from parse_text_functions import parse
 from graph_classes import Block
-from flow_functions import generic_flow, conditional_flow, else_flow, loop_flow, try_flow
+from flow_functions import generic_flow, conditional_flow, else_flow, loop_flow, try_flow, except_flow, finally_flow
 
 
 # map between python keywords and their node shapes and control flows
-Keyword_Map = {
+keyword_map = {
     'if': ['diamond', conditional_flow],
     'elif': ['diamond', conditional_flow],
     'else': ['box', else_flow],
     'for': ['diamond', loop_flow],
     'while': ['diamond', loop_flow],
     'try': ['box', try_flow],
-    'except': ['box', generic_flow],
-    'finally': ['box', else_flow],
+    'except': ['box', except_flow],
+    'finally': ['box', finally_flow],
     'with': ['box', generic_flow],
     'def': ['box', generic_flow],
     'class': ['box', generic_flow],
     'other': ['box', generic_flow]
 }
-
 
 def main(file_name = __file__):
     with open(file_name, 'r', encoding='UTF-8') as f:
@@ -47,14 +46,14 @@ def main(file_name = __file__):
     parse(lines)
 
     # create blocks
-    program_block = Block(lines, Keyword_Map)
+    program_block = Block(lines, keyword_map)
 
     # connect blocks
     program_block.draw_flow()
 
     # initialize graph
     dot = graphviz.Digraph()
-    dot.attr('graph', ranksep='1.0', nodesep='1.0', compound='true', newrank='true', packMode='graph', splines='ortho')
+    dot.attr('graph', ranksep='1.0', nodesep='1.0', compound='true', newrank='true', packMode='graph')
 
     # draw graph from block tree
     program_block.draw_graph(dot)

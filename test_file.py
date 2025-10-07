@@ -37,25 +37,42 @@ class Test_class:
                 elif True:
                     break
 
+pass
 try:
-    while True:
-        if True:
-            if True:
-                continue
-            if True:
-                break
-        
-        elif True:
-            break
-
+    pass
 except TypeError:
     print("TypeError")
-except ValueError:
-    print("ValueError")
 else:
     print("something else")
 finally:
-    exit()
+    pass
+pass
+
+try:
+    pass
+except TypeError:
+    print("TypeError")
+finally:
+    pass
+pass
+
+pass
+
+try:
+    pass
+except TypeError:
+    print("TypeError")
+else:
+    print("something else")
+pass
+
+try:
+    pass
+except TypeError:
+    print("TypeError")
+pass
+
+exit()
 
 # dangling code
 for i in range(10):
