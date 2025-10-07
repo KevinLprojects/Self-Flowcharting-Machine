@@ -47,12 +47,12 @@ def conditional_flow(block):
 
 
 def else_flow(block):
+    # prevent the else block from being displayed
+    block.hide()
+
     # connect all incoming connections to the child (the statement exicuted inside the else)
     for edge in block.edges:
         Edge(edge.source_block, block.children[0], **edge.graphviz_edge_kwargs)
-    
-    # prevent the else block from being displayed
-    block.hide()
 
     # if the block has a sibling lower than it, then connect the leaf blocks on the inside of the else statement to it
     if block.sibling_index() != -1:
@@ -87,16 +87,20 @@ def try_flow(block):
             else:
                 connect_loose_leaves(block, child)
                 break
+
     else:
         return
+    
     
     uncaught_error = True
     # if there is a finally keyword and an error that can not be caught, then attach the uncaught error to the finally statement
     for child in block.parent.children[block.sibling_index() + 1:]:
         if uncaught_error:
             uncaught_error = not (len(child.first_line.split()) > 1 and child.first_line.split()[1] == 'Exception')
+
         if child.keyword not in ['try', 'except', 'else', 'finally']:
             break
+
         if child.keyword == 'finally':
             Edge(block, child, label='uncaught error', weight='0.75', color='red', style='dashed')
             return
@@ -123,6 +127,7 @@ def except_flow(block):
         for child in block.parent.children[block.sibling_index() + 1:]:
             if child.keyword not in ['except', 'else']:
                 connect_loose_leaves(block, child)
+
 
 def finally_flow(block):
     else_flow(block)

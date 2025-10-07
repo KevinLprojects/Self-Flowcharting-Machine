@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from parse_text_functions import remove_comment
 
 class Edge:
@@ -53,7 +54,7 @@ class Edge:
     
 
 class Block:
-    def __init__(self, content, keyword_map, parent = None):
+    def __init__(self, content, keyword_map, parent=None):
         self.parent = parent # node that created the current object (if there is one)
         self.content = [] # all the lines in under the indent (if there is one) and the line causing the indent
         self.keyword_map = keyword_map
@@ -143,22 +144,20 @@ class Block:
     
     # recursively draws nodes to graphviz graph
     def draw_graph_nodes(self, dot):
-        if self.keyword == 'try':
-            self.draw_subgraph_nodes(dot)
-            return
-        
-        if self.parent is not None and self.shape is not None:
-            self.draw_node(dot)
+        with ExitStack() as stack:
+            if self.keyword == 'try':
+                c = stack.enter_context(dot.subgraph(name=str(id(self))))
+                c.attr(label='try block', style='dashed', cluster='true')
+                for child in self.children:
+                    child.draw_graph_nodes(c)
 
-        for child in self.children:
-            child.draw_graph_nodes(dot)
-    
-    # recursively draws nodes to a graphviz subgraph inside context manager
-    def draw_subgraph_nodes(self, dot):
-        with dot.subgraph(name=str(id(self))) as c:
-            c.attr(label='try block', style='dashed', cluster='true')
+                return
+            
+            if self.parent is not None and self.shape is not None:
+                self.draw_node(dot)
+
             for child in self.children:
-                child.draw_graph_nodes(c)
+                child.draw_graph_nodes(dot)
     
     # creates graphviz edges for each blocks edges recursively
     def draw_graph_edges(self, dot):  
