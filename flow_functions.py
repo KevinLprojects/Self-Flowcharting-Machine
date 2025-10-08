@@ -107,11 +107,11 @@ def try_flow(block):
     
     if uncaught_error:
         # create new block for program exit if uncaught error
-        child = Block([[0, 'exit()']], block.keyword_map, parent=block)
+        child = Block([[0, 'exit()']], block.keyword_map, parent=block, draw_program_level=True)
 
         block.children.append(child)
 
-        Edge(block.children[0], child, label='uncaught error', weight='0.75', color='red', style='dashed')
+        Edge(block.children[0], child, label='uncaught error', ltail=str(id(block)), weight='0.75', color='red', style='dashed')
 
 
 def except_flow(block):

@@ -54,8 +54,9 @@ class Edge:
     
 
 class Block:
-    def __init__(self, content, keyword_map, parent=None):
+    def __init__(self, content, keyword_map, parent=None, draw_program_level=False):
         self.parent = parent # node that created the current object (if there is one)
+        self.draw_program_level = draw_program_level # boolean to determine of a node should be drawn on the program level graph (main graph) or the working graph (potentially a subgraph)
         self.content = [] # all the lines in under the indent (if there is one) and the line causing the indent
         self.keyword_map = keyword_map
         self.graph_func = None # function used to connect blocks to self
@@ -143,21 +144,24 @@ class Block:
         dot.node(str(id(self)), self.first_line, shape=self.shape)
     
     # recursively draws nodes to graphviz graph
-    def draw_graph_nodes(self, dot):
+    def draw_graph_nodes(self, main_dot, working_dot):
         with ExitStack() as stack:
             if self.keyword == 'try':
-                c = stack.enter_context(dot.subgraph(name=str(id(self))))
+                c = stack.enter_context(working_dot.subgraph(name=str(id(self))))
                 c.attr(label='try block', style='dashed', cluster='true')
                 for child in self.children:
-                    child.draw_graph_nodes(c)
+                    child.draw_graph_nodes(main_dot, c)
 
                 return
             
             if self.parent is not None and self.shape is not None:
-                self.draw_node(dot)
+                if self.draw_program_level:
+                    self.draw_node(main_dot)
+                else:
+                    self.draw_node(working_dot)
 
             for child in self.children:
-                child.draw_graph_nodes(dot)
+                child.draw_graph_nodes(main_dot, working_dot)
     
     # creates graphviz edges for each blocks edges recursively
     def draw_graph_edges(self, dot):  
@@ -170,5 +174,5 @@ class Block:
     
     # combines the drawing of nodes and edges
     def draw_graph(self, dot):
-        self.draw_graph_nodes(dot)
+        self.draw_graph_nodes(dot, dot)
         self.draw_graph_edges(dot)
