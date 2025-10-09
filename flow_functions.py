@@ -172,3 +172,23 @@ def finally_flow(block):
         color="red",
         style="dashed",
     )
+
+
+def match_flow(block):
+    generic_flow(block)
+
+    if block.sibling_index() != -1:
+        connect_loose_leaves(block, block.parent.children[block.sibling_index() + 1])
+
+
+def case_flow(block):
+    if block.first_line.split()[1] == "_:":
+        else_flow(block)
+        return
+    # connect the block to its child (the statement exicuted when the condition is True)
+    Edge(block, block.children[0], taillabel="yes")
+
+    # if the block has siblings lower than it, then figure out how to connect them
+    if block.sibling_index() != -1:
+        # connect the first lower sibling (the statement exicututed when the condition is False)
+        Edge(block, block.parent.children[block.sibling_index() + 1], taillabel="no")

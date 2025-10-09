@@ -37,6 +37,14 @@ class Test_class:
                 elif True:
                     break
 
+match "test":
+    case "test":
+        print("test")
+    case "no":
+        pass
+    case _:
+        print("else")
+
 pass
 try:
     pass
