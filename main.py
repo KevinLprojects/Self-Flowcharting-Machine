@@ -1,3 +1,8 @@
+# NEED TO FIX:
+# I forgot that you can do except: (although ctrl-c is handled as an exception, so this prevents you from exiting your program)
+# @ decorators in classes (parse out)
+
+
 # left to do:
 
 # finish adding other keyword flows
@@ -11,7 +16,15 @@
 # improve layout of the chart (entry point -> Classes(methods) -> generic functions)
 # maybe use seq2seq transformer to put node labels in plane english?
 # other keywords to add for completeness: assert, async, await, raise, and yield
-# add lambdas and ternarys
+    # yield is bidirectional also yield from, but I'm not going to worry about that
+# add lambdas, ternarys, and multistatement lines (probably a preprecessing step)
+
+
+# Ideas to improve code in general:
+
+# Use yield to make generators for repeat code in the flow functions
+# Make a node class for each keyword. This will help simplify the block class and could help compartmentalize logic that belongs to each keyword
+# Maybe make the node classes dynamically, to avoid write so much gunk
 
 
 import sys
@@ -27,6 +40,8 @@ from flow_functions import (
     try_flow,
     except_flow,
     finally_flow,
+    match_flow,
+    case_flow,
 )
 
 
@@ -40,6 +55,8 @@ keyword_map = {
     "try": ["box", try_flow],
     "except": ["box", except_flow],
     "finally": ["box", finally_flow],
+    "match" : ["box", match_flow],
+    "case" : ["diamond", case_flow],
     "with": ["box", generic_flow],
     "def": ["box", generic_flow],
     "class": ["box", generic_flow],
