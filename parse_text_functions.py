@@ -54,7 +54,7 @@ def remove_lines(lines):
             continue
 
         # lines are lists of indentation ammount and the parsed line
-        lines[i] = [num_indentation(line), line.strip()]
+        lines[i] = [num_indentation(line), repr(remove_comment(line.strip()))[1:-1]]  
 
 
 # removes comments from the end of a line

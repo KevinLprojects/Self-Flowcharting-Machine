@@ -1,5 +1,17 @@
 from contextlib import ExitStack
-from parse_text_functions import remove_comment
+
+# returns the lines under the blocks indent (if there is one)
+def parse_content(lines):
+    content = []
+
+    content.append([lines[0][0] - 1, lines[0][1]])
+    # append only lines under the indent (if there is one)
+    for line in lines[1:]:
+        if line[0] == 0:
+            break
+        content.append([line[0] - 1, line[1]])
+    
+    return content
 
 
 class Edge:
@@ -11,6 +23,7 @@ class Edge:
 
         self.graphviz_edge_kwargs["labeldistance"] = "3"
 
+        # get the label of the edge from any of the label related args
         if "headlabel" in graphviz_edge_kwargs:
             self.label = graphviz_edge_kwargs["headlabel"]
         elif "taillabel" in graphviz_edge_kwargs:
@@ -28,6 +41,7 @@ class Edge:
             self.graphviz_edge_kwargs["lhead"] = str(id(self.target_block))
             self.target_block = self.target_block.children[0]
 
+        # don't draw connections between a node and itself
         if self.source_block == self.target_block:
             self.drawn = True
 
@@ -45,11 +59,13 @@ class Edge:
     def hide(self):
         self.drawn = True
 
+    # add the edge to the dot
     def draw(self, dot):
         # don't draw if the edge has already been drawn
         if self.drawn:
             return
         self.drawn = True
+
         # add to the graphviz Digraph
         dot.edge(
             str(id(self.source_block)),
@@ -70,16 +86,13 @@ class Block:
         self.shape = None  # graphviz shape keyword
         self.edges = []  # [source object, target object, label]
 
-        if parent is not None:
-            self.first_line = repr(remove_comment(content[0][1]))[1:-1]
+        if parent is None:
+            self.content = content
 
-            # append only lines under the indent (if there is one)
-            for line in content[1:]:
-                if line[0] == 0:
-                    break
-                self.content.append([line[0] - 1, line[1]])
-
-            # first word in the first line minus : (if there is a :)
+        else:
+            # parse the content for lines under indent (self.content), first line (self.first_line), and keyword (self.keyword) 
+            self.content = parse_content(content)
+            self.first_line = self.content[0][1]
             keyword = self.first_line.split()[0].replace(":", "")
 
             # assign shape and control flow function based on keyword dictionary
@@ -88,14 +101,10 @@ class Block:
                 self.shape = self.keyword_map[keyword][0]
                 self.graph_func = self.keyword_map[keyword][1]
             else:
-                self.shape = "box"
-                self.graph_func = self.keyword_map["other"][1]
-
-        else:
-            self.content = content
+                self.shape = "box" # default shape
+                self.graph_func = self.keyword_map["other"][1] # default flow
 
         self.children = []
-
         # recursively adds nodes until reaching lines with no indented children
         if len(self.content) != 0:
             for i, line in enumerate(self.content):
@@ -104,14 +113,22 @@ class Block:
                         Block(self.content[i:], self.keyword_map, parent=self)
                     )
 
-    # return index in parents list of children, or -1 if no parent or self is last sibling
-    def sibling_index(self):
+    @property
+    def has_lower_sibling(self):
         if self.parent is not None:
             self_index = self.parent.children.index(self)
             if self_index != len(self.parent.children) - 1:
-                return self_index
+                return True
 
-        return -1
+            else:
+                return False
+
+    def lower_siblings(self, offset=0):
+        if self.parent is not None:
+            self_index = self.parent.children.index(self)
+            if self_index != len(self.parent.children) - 1:
+                for child in self.parent.children[self_index + 1 + offset:]:
+                    yield child
 
     # prevents the node and its edges from being displayed
     def hide(self):
@@ -119,17 +136,12 @@ class Block:
         for edge in self.edges:
             edge.hide()
 
-    # return number of incoming and outgoing edges
-    def count_edges(self):
-        in_count = 0
-        out_count = 0
+    @property
+    def leaf(self):
         for edge in self.edges:
             if edge.direction(self):
-                out_count += 1
-            else:
-                in_count += 1
-
-        return (in_count, out_count)
+                return False
+        return True
 
     # gets the end line inside the current block
     def get_end_leaf(self):

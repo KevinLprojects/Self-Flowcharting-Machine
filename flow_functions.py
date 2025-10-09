@@ -8,22 +8,20 @@ def generic_flow(block):
 
     else:
         # if the block has a sibling lower than it, then connect the two
-        if block.sibling_index() != -1:
-            Edge(block, block.parent.children[block.sibling_index() + 1])
+        if block.has_lower_sibling:
+            Edge(block, next(block.lower_siblings()))
 
 
 # finds all nodes that result in control flow leaving the current block (leaf nodes) and connects them to a given target node
 def connect_loose_leaves(source_block, target_block, **graphviz_edge_kwargs):
     for child in source_block.children:
         # if a child is a conditional with no false output connection, it is a loose leaf
-        if (child.shape == "diamond") and child.parent.children.index(child) == len(
-            child.parent.children
-        ) - 1:
+        if (child.shape == "diamond") and not child.has_lower_sibling:
             graphviz_edge_kwargs["taillabel"] = "no"
             Edge(child, target_block, **graphviz_edge_kwargs)
 
         # if a child has no children and no outgoing edges (it is the lowest line of code in the block) it is a loose leaf
-        if len(child.children) == 0 and child.count_edges()[1] == 0:
+        if len(child.children) == 0 and child.leaf:
             graphviz_edge_kwargs["taillabel"] = None
             Edge(child, target_block, **graphviz_edge_kwargs)
 
@@ -36,16 +34,14 @@ def conditional_flow(block):
     Edge(block, block.children[0], taillabel="yes")
 
     # if the block has siblings lower than it, then figure out how to connect them
-    if block.sibling_index() != -1:
-        # connect the first lower sibling (the statement exicututed when the condition is False)
-        Edge(block, block.parent.children[block.sibling_index() + 1], taillabel="no")
-
-        # loop through the rest of the siblings
-        for child in block.parent.children[block.sibling_index() + 2 :]:
-            # connect the leaf nodes in the if's inside stantement (exicuted when the condition is True) to the first non elif/else block
-            if child.keyword not in ["else", "elif"]:
-                connect_loose_leaves(block, child)
-                break
+    for i, child in enumerate(block.lower_siblings()):
+        if i == 0:
+            # connect the first lower sibling (the statement exicututed when the condition is False)
+            Edge(block, child, taillabel="no")
+        # connect the leaf nodes in the if's inside stantement (exicuted when the condition is True) to the first non elif/else block
+        elif child.keyword not in ["else", "elif"]:
+            connect_loose_leaves(block, child)
+            break
 
 
 def else_flow(block):
@@ -57,8 +53,8 @@ def else_flow(block):
         Edge(edge.source_block, block.children[0], **edge.graphviz_edge_kwargs)
 
     # if the block has a sibling lower than it, then connect the leaf blocks on the inside of the else statement to it
-    if block.sibling_index() != -1:
-        connect_loose_leaves(block, block.parent.children[block.sibling_index() + 1])
+    if block.has_lower_sibling:
+        connect_loose_leaves(block, next(block.lower_siblings()))
 
 
 def loop_flow(block):
@@ -70,44 +66,34 @@ def loop_flow(block):
     connect_loose_leaves(block, block)
 
     # if the block has siblings lower than it, then figure out how to connect them
-    if block.sibling_index() != -1:
-        for i, child in enumerate(block.parent.children[block.sibling_index() + 1 :]):
-            # connect the first lower sibling (the statement exictuted when the condition is False)
-            if i == 0:
-                Edge(block, child, taillabel="no")
+    if block.has_lower_sibling:
+        Edge(block, next(block.lower_siblings()), taillabel="no")
 
 
 def try_flow(block):
     # if the block has siblings lower than it, then figure out how to connect them
-    if block.sibling_index() != -1:
-        for child in block.parent.children[block.sibling_index() + 1 :]:
-            # if the sibling is an except, then connect it with a special error connection
-            if child.keyword == "except":
-                Edge(
-                    block,
-                    child,
-                    label=child.first_line.split()[1],
-                    weight="0.75",
-                    color="red",
-                    style="dashed",
-                )
+    for child in block.lower_siblings():
+        # if the sibling is an except, then connect it with a special error connection
+        if child.keyword == "except":
+            Edge(
+                block,
+                child,
+                label=child.first_line.split()[1],
+                weight="0.75",
+                color="red",
+                style="dashed",
+            )
 
-            # connect the leaf nodes in the try's inside stantement (exicuted when the condition is True) to the first non except block
-            else:
-                connect_loose_leaves(block, child)
-                break
-
-    else:
-        return
+        # connect the leaf nodes in the try's inside stantement (exicuted when the condition is True) to the first non except block
+        else:
+            connect_loose_leaves(block, child)
+            break
 
     uncaught_error = True
     # if there is a finally keyword and an error that can not be caught, then attach the uncaught error to the finally statement
-    for child in block.parent.children[block.sibling_index() + 1 :]:
+    for child in block.lower_siblings():
         if uncaught_error:
-            uncaught_error = not (
-                len(child.first_line.split()) > 1
-                and child.first_line.split()[1] == "Exception"
-            )
+            uncaught_error = not (len(child.first_line.split()) > 1 and child.first_line.split()[1] == "Exception")
 
         if child.keyword not in ["try", "except", "else", "finally"]:
             break
@@ -125,10 +111,7 @@ def try_flow(block):
 
     if uncaught_error:
         # create new block for program exit if uncaught error
-        child = Block(
-            [[0, "exit()"]], block.keyword_map, parent=block, draw_program_level=True
-        )
-
+        child = Block([[0, "exit()"]], block.keyword_map, parent=block, draw_program_level=True)
         block.children.append(child)
 
         Edge(
@@ -151,10 +134,9 @@ def except_flow(block):
     block.hide()
 
     # if the block has a sibling lower than it, then connect the leaf blocks on the inside of the else statement to it
-    if block.sibling_index() != -1:
-        for child in block.parent.children[block.sibling_index() + 1 :]:
-            if child.keyword not in ["except", "else"]:
-                connect_loose_leaves(block, child)
+    for child in block.lower_siblings():
+        if child.keyword not in ["except", "else"]:
+            connect_loose_leaves(block, child)
 
 
 def finally_flow(block):
@@ -177,8 +159,8 @@ def finally_flow(block):
 def match_flow(block):
     generic_flow(block)
 
-    if block.sibling_index() != -1:
-        connect_loose_leaves(block, block.parent.children[block.sibling_index() + 1])
+    if block.has_lower_sibling:
+        connect_loose_leaves(block, next(block.lower_siblings()))
 
 
 def case_flow(block):
@@ -189,6 +171,6 @@ def case_flow(block):
     Edge(block, block.children[0], taillabel="yes")
 
     # if the block has siblings lower than it, then figure out how to connect them
-    if block.sibling_index() != -1:
+    if block.has_lower_sibling:
         # connect the first lower sibling (the statement exicututed when the condition is False)
-        Edge(block, block.parent.children[block.sibling_index() + 1], taillabel="no")
+        Edge(block, next(block.lower_siblings()), taillabel="no")
