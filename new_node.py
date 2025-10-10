@@ -11,9 +11,8 @@
     # graph
 
 # methods:
-# draw node
 # connect node
-# evaluate (take all variable states from parent to flow to the correct output (basically python interpreter))
+# draw node
 
 # subclasses:
     # subgraph (nodes that are diplayed on a new subgraph):
