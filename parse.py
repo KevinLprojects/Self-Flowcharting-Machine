@@ -93,7 +93,3 @@ def merge_lines(lines):
 
             last_state = False
 
-
-def parse(lines):
-    remove_lines(lines)
-    merge_lines(lines)

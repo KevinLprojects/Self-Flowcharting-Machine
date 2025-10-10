@@ -30,9 +30,9 @@
 import sys
 import graphviz
 
-from parse_text_functions import parse
-from graph_classes import Block
-from flow_functions import (
+from block import Block
+from parse import merge_lines, remove_lines
+from flow import (
     generic_flow,
     conditional_flow,
     else_flow,
@@ -69,7 +69,8 @@ def main(file_name=__file__):
         lines = f.readlines()
 
     # parse the text
-    parse(lines)
+    remove_lines(lines)
+    merge_lines(lines)
 
     # create blocks
     program_block = Block(lines, keyword_map)
@@ -89,7 +90,8 @@ def main(file_name=__file__):
     )
 
     # draw graph from block tree
-    program_block.draw_graph(dot)
+    program_block.draw_graph_nodes(dot)
+    program_block.draw_graph_edges(dot)
 
     # create graph pdf, dot file, and open pdf
     dot.render("graph", view=True)

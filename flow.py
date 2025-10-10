@@ -1,4 +1,5 @@
-from graph_classes import Edge, Block
+from block import Block
+from edge import Edge
 
 
 def generic_flow(block):
@@ -74,7 +75,7 @@ def try_flow(block):
     # if the block has siblings lower than it, then figure out how to connect them
     for child in block.lower_siblings():
         # if the sibling is an except, then connect it with a special error connection
-        if child.keyword == "except":
+        if child.keyword == "except" and child.first_line.split()[0][-1] != ":":
             Edge(
                 block,
                 child,
@@ -93,7 +94,7 @@ def try_flow(block):
     # if there is a finally keyword and an error that can not be caught, then attach the uncaught error to the finally statement
     for child in block.lower_siblings():
         if uncaught_error:
-            uncaught_error = not (len(child.first_line.split()) > 1 and child.first_line.split()[1] == "Exception")
+            uncaught_error = child.first_line.split()[0].replace(" ", "") != "except:" and (len(child.first_line.split()) == 1 or child.first_line.split()[1] != "Exception")
 
         if child.keyword not in ["try", "except", "else", "finally"]:
             break

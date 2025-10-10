@@ -68,7 +68,7 @@ pass
 
 try:
     pass
-except TypeError:
+except Exception:
     print("TypeError")
 else:
     print("something else")
@@ -76,7 +76,7 @@ pass
 
 try:
     pass
-except TypeError:
+except:
     print("TypeError")
 pass
 
