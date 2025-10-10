@@ -15,42 +15,43 @@
 # draw node
 
 # subclasses:
-    # subgraph (nodes that are diplayed on a new subgraph):
-        # composite (nodes that are converted to a combination of other nodes, either adding or subtracting):
-            # try
+    # chart:
+        # terminal
+        # process
+        # decision
+        # input/output
+        # predifined process
+
+    # newgraph:
+        # scope:
             # def
             # class
 
-    # inherit_graph (nodes that are added to their parents graph):
-        # basic (nodes that are displayed under their keyword and code):
-            # UDF calls
-            # UDC objects
-            # input/output
-            # process
-            # if
-            # for
-            # while
-            # return
-            # yield
-        
-        # composite (nodes that are converted to a combination of other nodes, either adding or subtracting that can still function as python code in their composite form):
+        # try
+    
+    # composite:
+        # subgraph:
+            # except
+            # finally
+
+        # normal:
+            # with
             # match
             # case
-            # assert
-            # with
-            # lambda
-         
-        # chart_exclusive (nodes whos flow chart representation can not be direcly interpreted as python code):
+            # UDF calls
+            # UDC objects
+            # if
             # elif
             # else
+            # for
+            # while
             # continue
             # break
             # exit()
             # quit()
-            # except
-            # finally
+            # return
+            # yield
             # raise
-            # with
+            # assert
             # pass
-            # start
-            # end
+
